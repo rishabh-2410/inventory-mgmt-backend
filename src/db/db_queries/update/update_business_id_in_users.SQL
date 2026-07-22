@@ -1,0 +1,3 @@
+UPDATE users
+SET business_id='9625c084-99b2-4119-920a-eabd9bca6e15'
+WHERE id='9c536089-9566-4ab4-9875-d99c5a0f6604'

@@ -1,0 +1,2 @@
+ALTER TsABLE products
+ADD COLUMN sku TEXT NOT NULL;
