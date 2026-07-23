@@ -32,12 +32,6 @@ func (userHandler *Handler) HandleRegisterUser(w http.ResponseWriter,
 		return
 	}
 
-	// logging.Request(r.Method, r.URL.Path, map[string]any{
-	// 	"name":     request.Name,
-	// 	"email":    request.Email,
-	// 	"password": logging.Redacted("password"),
-	// })
-
 	err := validation.Validate.Struct(request)
 	if err != nil {
 		slog.Error("register request validation failed", "path", r.URL.Path, "email", request.Email, "err", err)
@@ -60,49 +54,37 @@ func (userHandler *Handler) HandleRegisterUser(w http.ResponseWriter,
 	w.WriteHeader(http.StatusOK)
 }
 
-// func (userHandler *Handler) HandleUserLogin(w http.ResponseWriter, r *http.Request) {
-// 	var request reqmodels.LoginUserRequestDTO
+func (userHandler *Handler) HandleUserLogin(w http.ResponseWriter, r *http.Request) {
+	var request reqmodels.LoginUserRequestDTO
 
-// 	decoder := json.NewDecoder(r.Body)
-// 	decoder.DisallowUnknownFields()
-// 	if err := decoder.Decode(&request); err != nil {
-// 		logging.Error("login request decode failed path=%s err=%v", r.URL.Path, err)
-// 		http.Error(w, "Invalid Request", http.StatusBadRequest)
-// 		return
-// 	}
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+	if err := decoder.Decode(&request); err != nil {
+		slog.Error("login request decode failed", "path", r.URL.Path, "err", err)
+		http.Error(w, "Invalid Request", http.StatusBadRequest)
+		return
+	}
 
-// 	logging.Request(r.Method, r.URL.Path, map[string]any{
-// 		"email":    request.Email,
-// 		"password": logging.Redacted("password"),
-// 	})
+	err := validation.Validate.Struct(request)
+	if err != nil {
+		slog.Error("login request validation failed", "path", r.URL.Path, "email", request.Email, "err", err)
+		http.Error(w, "Invalid Request", http.StatusBadRequest)
+		return
+	}
 
-// 	err := validation.Validate.Struct(request)
-// 	if err != nil {
-// 		logging.Error("login request validation failed path=%s email=%s err=%v", r.URL.Path, request.Email, err)
-// 		http.Error(w, "Invalid Request", http.StatusBadRequest)
-// 		return
-// 	}
+	loggedUser, err := userHandler.userService.LoginUser(&request)
+	if err != nil {
+		slog.Error("login request failed", "path", r.URL.Path, "email", request.Email, "err", err)
+		http.Error(w, "Invalid Credentials", http.StatusUnauthorized)
+		return
+	}
 
-// 	loggedUser, err := userHandler.userService.LoginUser(&request)
-// 	if err != nil {
-// 		logging.Error("login request failed path=%s email=%s err=%v", r.URL.Path, request.Email, err)
-// 		http.Error(w, "Invalid Credentials", http.StatusUnauthorized)
-// 		return
-// 	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
 
-// 	w.Header().Set("Content-Type", "application/json")
-// 	w.WriteHeader(http.StatusOK)
-
-// 	logging.Response(r.Method, r.URL.Path, http.StatusOK, map[string]any{
-// 		"id":         loggedUser.ID,
-// 		"name":       loggedUser.Name,
-// 		"email":      loggedUser.Email,
-// 		"created_at": loggedUser.CreatedAt,
-// 	})
-
-// 	if err = json.NewEncoder(w).Encode(loggedUser); err != nil {
-// 		logging.Error("login response encode failed path=%s email=%s err=%v", r.URL.Path, request.Email, err)
-// 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-// 		return
-// 	}
-// }
+	if err = json.NewEncoder(w).Encode(loggedUser); err != nil {
+		slog.Error("login response encode failed", "path", r.URL.Path, "email", request.Email, "err", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+}

@@ -21,14 +21,16 @@ func New(userHandler *user.Handler, businessHandler *business.Handler) *Router {
 
 func (r *Router) RegisterRoutes() {
 	slog.Info("registering HTTP routes")
+	r.registerAuthRoutes()
+	r.registerBusinessRoutes()
 
-	http.HandleFunc(
-		"POST /api/v1/auth/register",
-		r.userHandler.HandleRegisterUser,
-	)
+}
 
-	http.HandleFunc(
-		"POST /api/v1/business",
-		r.businessHandler.HandleAddBusiness,
-	)
+func (r *Router) registerAuthRoutes() {
+	http.HandleFunc("POST /api/v1/auth/register", r.userHandler.HandleRegisterUser)
+	http.HandleFunc("POST /api/v1/auth/login", r.userHandler.HandleUserLogin)
+}
+
+func (r *Router) registerBusinessRoutes() {
+	http.HandleFunc("POST /api/v1/business", r.businessHandler.HandleAddBusiness)
 }

@@ -2,9 +2,11 @@ package services
 
 import (
 	"errors"
+	"inventory-backend/src/auth"
 	dbmodel "inventory-backend/src/models/db_object"
 	enum "inventory-backend/src/models/enums"
 	reqmodels "inventory-backend/src/models/req_dto"
+	resmodels "inventory-backend/src/models/res_dto"
 	tokenrepo "inventory-backend/src/repository/token"
 	userrepo "inventory-backend/src/repository/user"
 	"log/slog"
@@ -44,12 +46,14 @@ func (us *Service) RegisterUser(req *reqmodels.RegisterUserRequestDTO) error {
 		return err
 	}
 
+	isActive := true
 	role := enum.RoleOwner
 	newUser := &dbmodel.User{
 		Email:        req.Email,
 		Name:         req.Name,
 		PasswordHash: string(hashBytes),
 		Role:         &role,
+		IsActive:     isActive,
 	}
 
 	err = us.userRepo.AddUser(newUser)
@@ -64,93 +68,106 @@ func (us *Service) RegisterUser(req *reqmodels.RegisterUserRequestDTO) error {
 
 }
 
-// func (us *Service) LoginUser(req *reqmodels.LoginUserRequestDTO) (*resmodels.LoginUserResponseDTO, error) {
-// 	logging.Debug("login user service start email=%s", req.Email)
-// 	user, err := us.userRepo.FindByEmail(req.Email)
-// 	if err != nil {
-// 		logging.Error("login user lookup failed email=%s err=%v", req.Email, err)
-// 		return nil, err
-// 	}
+func (us *Service) LoginUser(req *reqmodels.LoginUserRequestDTO) (*resmodels.LoginUserResponseDTO, error) {
+	slog.Debug("login user service start email=%s", req.Email)
+	user, err := us.userRepo.FindByEmail(req.Email)
+	if err != nil {
+		slog.Error("login user lookup failed", "email", req.Email, "err", err)
+		return nil, err
+	}
 
-// 	err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.Password))
-// 	if err != nil {
-// 		logging.Error("login user password mismatch email=%s user_id=%s err=%v", req.Email, user.ID, err)
-// 		return nil, err
-// 	}
+	err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.Password))
+	if err != nil {
+		slog.Error("login user password mismatch", "email", req.Email, "user_id", user.ID, "err", err)
+		return nil, err
+	}
 
-// 	accessToken, err := auth.GenerateAccessToken(user.ID)
-// 	if err != nil {
-// 		logging.Error("login user access token generation failed user_id=%s err=%v", user.ID, err)
-// 		return nil, err
-// 	}
+	if user.BusinessID == nil {
+		slog.Error("login user business id is nil", "user_id", user.ID)
+		return nil, errors.New("business id is required")
+	}
 
-// 	refreshToken, err := auth.GenerateRefreshToken()
-// 	if err != nil {
-// 		logging.Error("login user refresh token generation failed user_id=%s err=%v", user.ID, err)
-// 		return nil, err
-// 	}
+	if user.Role == nil {
+		slog.Error("login user role is nil", "user_id", user.ID)
+		return nil, errors.New("role is required")
+	}
 
-// 	hashedRefreshToken := auth.HashToken(refreshToken)
+	accessToken, err := auth.GenerateAccessToken(user.ID, *user.BusinessID, *user.Role)
+	if err != nil {
+		slog.Error("login user access token generation failed", "user_id", user.ID, "err", err)
+		return nil, err
+	}
 
-// 	err = us.tokenRepo.SaveRefreshToken(user.ID, hashedRefreshToken)
-// 	if err != nil {
-// 		logging.Error("login user refresh token save failed user_id=%s err=%v", user.ID, err)
-// 		return nil, err
-// 	}
+	refreshToken, err := auth.GenerateRefreshToken()
+	if err != nil {
+		slog.Error("login user refresh token generation failed", "user_id", user.ID, "err", err)
+		return nil, err
+	}
 
-// 	logging.Info("login user service success user_id=%s email=%s", user.ID, user.Email)
+	hashedRefreshToken := auth.HashToken(refreshToken)
 
-// 	return &resmodels.LoginUserResponseDTO{
-// 		ID:           user.ID,
-// 		Name:         user.Name,
-// 		Email:        user.Email,
-// 		CreatedAt:    user.CreatedAt,
-// 		AccessToken:  accessToken,
-// 		RefreshToken: refreshToken,
-// 	}, nil
+	err = us.tokenRepo.SaveRefreshToken(user.ID, hashedRefreshToken)
+	if err != nil {
+		slog.Error("login user refresh token save failed", "user_id", user.ID, "err", err)
+		return nil, err
+	}
 
-// }
+	slog.Info("login user service success", "user_id", user.ID, "email", user.Email)
+
+	return &resmodels.LoginUserResponseDTO{
+		ID:           user.ID,
+		Name:         user.Name,
+		Email:        user.Email,
+		CreatedAt:    user.CreatedAt,
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+		IsActive:     user.IsActive,
+		BusinessID:   user.BusinessID,
+		Role:         user.Role,
+	}, nil
+
+}
 
 // func (us *Service) LogoutUser(refreshToken string) error {
-// 	logging.Debug("logout user service start refresh_token=%s", logging.Redacted("refresh_token"))
+// 	slog.Debug("logout user service start refresh_token=%s", slog.Redacted("refresh_token"))
 // 	refreshTokenHash := auth.HashToken(refreshToken)
 
 // 	err := us.userRepo.RevokeUser(refreshTokenHash)
 // 	if err != nil {
-// 		logging.Error("logout user revoke failed err=%v", err)
+// 		slog.Error("logout user revoke failed err=%v", err)
 // 		return err
 // 	}
 
-// 	logging.Info("logout user service success")
+// 	slog.Info("logout user service success")
 
 // 	return nil
 // }
 
 // func (us *Service) RefreshToken(existingrefreshToken string) (*resmodels.LoginUserResponseDTO, error) {
-// 	logging.Debug("refresh token service start refresh_token=%s", logging.Redacted("refresh_token"))
+// 	slog.Debug("refresh token service start refresh_token=%s", slog.Redacted("refresh_token"))
 // 	refreshTokenHash := auth.HashToken(existingrefreshToken)
 
 // 	userID, err := us.tokenRepo.MarkTokenExpired(refreshTokenHash)
 // 	if err != nil {
-// 		logging.Error("refresh token mark expired failed err=%v", err)
+// 		slog.Error("refresh token mark expired failed err=%v", err)
 // 		return nil, err
 // 	}
 
 // 	user, err := us.userRepo.FindById(userID)
 // 	if err != nil {
-// 		logging.Error("refresh token user lookup failed user_id=%s err=%v", userID, err)
+// 		slog.Error("refresh token user lookup failed user_id=%s err=%v", userID, err)
 // 		return nil, err
 // 	}
 
 // 	accessToken, err := auth.GenerateAccessToken(userID)
 // 	if err != nil {
-// 		logging.Error("refresh token access token generation failed user_id=%s err=%v", userID, err)
+// 		slog.Error("refresh token access token generation failed user_id=%s err=%v", userID, err)
 // 		return nil, err
 // 	}
 
 // 	newRefreshToken, err := auth.GenerateRefreshToken()
 // 	if err != nil {
-// 		logging.Error("refresh token generation failed user_id=%s err=%v", userID, err)
+// 		slog.Error("refresh token generation failed user_id=%s err=%v", userID, err)
 // 		return nil, err
 // 	}
 
@@ -158,11 +175,11 @@ func (us *Service) RegisterUser(req *reqmodels.RegisterUserRequestDTO) error {
 
 // 	err = us.tokenRepo.SaveRefreshToken(userID, hashedRefreshToken)
 // 	if err != nil {
-// 		logging.Error("refresh token save failed user_id=%s err=%v", userID, err)
+// 		slog.Error("refresh token save failed user_id=%s err=%v", userID, err)
 // 		return nil, err
 // 	}
 
-// 	logging.Info("refresh token service success user_id=%s email=%s", user.ID, user.Email)
+// 	slog.Info("refresh token service success user_id=%s email=%s", user.ID, user.Email)
 
 // 	return &resmodels.LoginUserResponseDTO{
 // 		ID:           user.ID,

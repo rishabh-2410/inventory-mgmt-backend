@@ -1,0 +1,22 @@
+package models
+
+import (
+	"time"
+
+	enums "inventory-backend/src/models/enums"
+
+	"github.com/google/uuid"
+)
+
+type LoginUserResponseDTO struct {
+	ID           uuid.UUID       `json:"id"`
+	Name         string          `json:"name"`
+	Email        string          `json:"email"`
+	BusinessID   *uuid.UUID      `json:"business_id"`
+	Role         *enums.UserRole `json:"role"`
+	IsActive     bool            `json:"is_active"`
+	AccessToken  string          `json:"access_token"`
+	RefreshToken string          `json:"refresh_token"`
+	CreatedAt    time.Time       `json:"created_at"`
+	UpdatedAt    time.Time       `json:"updated_at"`
+}
