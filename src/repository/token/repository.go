@@ -19,7 +19,7 @@ func NewTokenRepo(db *sql.DB) *TokenRepo {
 }
 
 func (tr *TokenRepo) SaveRefreshToken(userID uuid.UUID, refreshToken string) error {
-	slog.Debug("token repository save refresh token user_id=%s refresh_token=%s", userID, refreshToken)
+	slog.Debug("token repository save refresh token", "user_id", userID, "refres_token", refreshToken)
 	result, err := tr.db.Exec(
 		`INSERT INTO refresh_tokens(
     	user_id,
@@ -53,9 +53,9 @@ func (tr *TokenRepo) SaveRefreshToken(userID uuid.UUID, refreshToken string) err
 	return nil
 }
 
-func (tr *TokenRepo) MarkTokenExpired(refreshToken string) (string, error) {
+func (tr *TokenRepo) MarkTokenExpired(refreshToken string) (uuid.UUID, error) {
 	slog.Debug("token repository mark token expired", "refresh_token", refreshToken)
-	var userID string
+	var userID uuid.UUID
 	err := tr.db.QueryRow(`
 		UPDATE refresh_tokens 
 		SET revoked_at=NOW()
@@ -66,8 +66,8 @@ func (tr *TokenRepo) MarkTokenExpired(refreshToken string) (string, error) {
 		`, refreshToken).Scan(&userID)
 
 	if err != nil {
-		slog.Error("token repository mark token expired failed err=%v", err)
-		return "", err
+		slog.Error("token repository mark token expired failed", "err", err)
+		return uuid.UUID{}, err
 	}
 
 	slog.Info("token repository mark token expired success", "user_id", userID)

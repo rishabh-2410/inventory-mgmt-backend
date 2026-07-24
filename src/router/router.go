@@ -29,8 +29,11 @@ func (r *Router) RegisterRoutes() {
 func (r *Router) registerAuthRoutes() {
 	http.HandleFunc("POST /api/v1/auth/register", r.userHandler.HandleRegisterUser)
 	http.HandleFunc("POST /api/v1/auth/login", r.userHandler.HandleUserLogin)
+	http.HandleFunc("POST /api/v1/auth/logout", r.userHandler.HandleUserLogout)
+	http.HandleFunc("POST /api/v1/auth/refresh", r.userHandler.HandleTokenRefresh)
 }
 
 func (r *Router) registerBusinessRoutes() {
 	http.HandleFunc("POST /api/v1/business", r.businessHandler.HandleAddBusiness)
+
 }

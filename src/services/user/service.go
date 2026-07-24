@@ -128,65 +128,68 @@ func (us *Service) LoginUser(req *reqmodels.LoginUserRequestDTO) (*resmodels.Log
 
 }
 
-// func (us *Service) LogoutUser(refreshToken string) error {
-// 	slog.Debug("logout user service start refresh_token=%s", slog.Redacted("refresh_token"))
-// 	refreshTokenHash := auth.HashToken(refreshToken)
+func (us *Service) LogoutUser(refreshToken string) error {
+	slog.Debug("logout user service start", "refresh_token", refreshToken)
+	refreshTokenHash := auth.HashToken(refreshToken)
 
-// 	err := us.userRepo.RevokeUser(refreshTokenHash)
-// 	if err != nil {
-// 		slog.Error("logout user revoke failed err=%v", err)
-// 		return err
-// 	}
+	err := us.userRepo.RevokeUser(refreshTokenHash)
+	if err != nil {
+		slog.Error("logout user revoke failed err=%v", err)
+		return err
+	}
 
-// 	slog.Info("logout user service success")
+	slog.Info("logout user service success")
 
-// 	return nil
-// }
+	return nil
+}
 
-// func (us *Service) RefreshToken(existingrefreshToken string) (*resmodels.LoginUserResponseDTO, error) {
-// 	slog.Debug("refresh token service start refresh_token=%s", slog.Redacted("refresh_token"))
-// 	refreshTokenHash := auth.HashToken(existingrefreshToken)
+func (us *Service) RefreshToken(existingrefreshToken string) (*resmodels.LoginUserResponseDTO, error) {
+	slog.Debug("refresh token service start", "refresh_token", existingrefreshToken)
+	refreshTokenHash := auth.HashToken(existingrefreshToken)
 
-// 	userID, err := us.tokenRepo.MarkTokenExpired(refreshTokenHash)
-// 	if err != nil {
-// 		slog.Error("refresh token mark expired failed err=%v", err)
-// 		return nil, err
-// 	}
+	userID, err := us.tokenRepo.MarkTokenExpired(refreshTokenHash)
+	if err != nil {
+		slog.Error("refresh token mark expired failed err=%v", err)
+		return nil, err
+	}
 
-// 	user, err := us.userRepo.FindById(userID)
-// 	if err != nil {
-// 		slog.Error("refresh token user lookup failed user_id=%s err=%v", userID, err)
-// 		return nil, err
-// 	}
+	user, err := us.userRepo.FindByID(userID)
+	if err != nil {
+		slog.Error("refresh token user lookup failed user_id=%s err=%v", userID, err)
+		return nil, err
+	}
 
-// 	accessToken, err := auth.GenerateAccessToken(userID)
-// 	if err != nil {
-// 		slog.Error("refresh token access token generation failed user_id=%s err=%v", userID, err)
-// 		return nil, err
-// 	}
+	accessToken, err := auth.GenerateAccessToken(user.ID, *user.BusinessID, *user.Role)
+	if err != nil {
+		slog.Error("refresh token access token generation failed user_id=%s err=%v", userID, err)
+		return nil, err
+	}
 
-// 	newRefreshToken, err := auth.GenerateRefreshToken()
-// 	if err != nil {
-// 		slog.Error("refresh token generation failed user_id=%s err=%v", userID, err)
-// 		return nil, err
-// 	}
+	newRefreshToken, err := auth.GenerateRefreshToken()
+	if err != nil {
+		slog.Error("refresh token generation failed user_id=%s err=%v", userID, err)
+		return nil, err
+	}
 
-// 	hashedRefreshToken := auth.HashToken(newRefreshToken)
+	hashedRefreshToken := auth.HashToken(newRefreshToken)
 
-// 	err = us.tokenRepo.SaveRefreshToken(userID, hashedRefreshToken)
-// 	if err != nil {
-// 		slog.Error("refresh token save failed user_id=%s err=%v", userID, err)
-// 		return nil, err
-// 	}
+	err = us.tokenRepo.SaveRefreshToken(userID, hashedRefreshToken)
+	if err != nil {
+		slog.Error("refresh token save failed user_id=%s err=%v", userID, err)
+		return nil, err
+	}
 
-// 	slog.Info("refresh token service success user_id=%s email=%s", user.ID, user.Email)
+	slog.Info("refresh token service success user_id=%s email=%s", user.ID, user.Email)
 
-// 	return &resmodels.LoginUserResponseDTO{
-// 		ID:           user.ID,
-// 		Name:         user.Name,
-// 		Email:        user.Email,
-// 		CreatedAt:    user.CreatedAt,
-// 		AccessToken:  accessToken,
-// 		RefreshToken: newRefreshToken,
-// 	}, nil
-// }
+	return &resmodels.LoginUserResponseDTO{
+		ID:           user.ID,
+		Name:         user.Name,
+		Email:        user.Email,
+		CreatedAt:    user.CreatedAt,
+		AccessToken:  accessToken,
+		RefreshToken: newRefreshToken,
+		IsActive:     user.IsActive,
+		BusinessID:   user.BusinessID,
+		Role:         user.Role,
+	}, nil
+}
