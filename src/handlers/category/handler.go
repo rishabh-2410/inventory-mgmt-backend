@@ -154,3 +154,86 @@ func (h *Handler) HandleEditCategory(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 }
+
+func (h *Handler) HandleGetCategories(w http.ResponseWriter, r *http.Request) {
+	userID, ok := requestcontext.GetUserID(r.Context())
+	if !ok {
+		slog.Error("missing user id", "endpoint", r.URL.Path)
+		http.Error(w, "User is not authorized to update category", http.StatusUnauthorized)
+		return
+	}
+
+	businessID, ok := requestcontext.GetBusinessID(r.Context())
+	if !ok {
+		slog.Error("missing business id", "endpoint", r.URL.Path)
+		http.Error(w, "User is either not associated to a business or does not own one", http.StatusUnauthorized)
+		return
+	}
+
+	_, ok = requestcontext.GetUserRole(r.Context())
+	if !ok {
+		slog.Error("invalid user ", "endpoint", r.URL.Path)
+		http.Error(w, "User is either not associated to a business or does not own one", http.StatusUnauthorized)
+		return
+	}
+
+	response, err := h.catService.GetCategories(businessID)
+	if err != nil {
+		slog.Error("get categories failed", "endpoint", r.URL.Path, "user_id", userID, "error", err)
+		http.Error(w, "failed to get categories", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	if err = json.NewEncoder(w).Encode(response); err != nil {
+		slog.Error("failed to get categories", "endpoint", r.URL.Path, "error", err)
+		http.Error(w, "cannot fetch categories", http.StatusInternalServerError)
+		return
+	}
+}
+
+func (h *Handler) HandleDeleteCategory(w http.ResponseWriter, r *http.Request) {
+	userID, ok := requestcontext.GetUserID(r.Context())
+	if !ok {
+		slog.Error("missing user id", "endpoint", r.URL.Path)
+		http.Error(w, "User is not authorized to update category", http.StatusUnauthorized)
+		return
+	}
+
+	businessID, ok := requestcontext.GetBusinessID(r.Context())
+	if !ok {
+		slog.Error("missing business id", "endpoint", r.URL.Path)
+		http.Error(w, "User is either not associated to a business or does not own one", http.StatusUnauthorized)
+		return
+	}
+
+	role, ok := requestcontext.GetUserRole(r.Context())
+	if !ok {
+		slog.Error("invalid user ", "endpoint", r.URL.Path)
+		http.Error(w, "User is either not associated to a business or does not own one", http.StatusUnauthorized)
+		return
+	}
+
+	if role != enums.RoleOwner {
+		slog.Error("cannot delete category, user is not owner", "user_id", userID, "role", role)
+		http.Error(w, "User does not have required permissions to perform this operation", http.StatusUnauthorized)
+		return
+	}
+
+	categoryID := r.PathValue("id")
+	if categoryID == "" {
+		slog.Error("missing category id", "endpoint", r.URL.Path)
+		http.Error(w, "Category ID is required", http.StatusBadRequest)
+	}
+
+	err := h.catService.DeleteCategory(uuid.MustParse(categoryID), businessID)
+	if err != nil {
+		slog.Error("delete category failed", "endpoint", r.URL.Path, "user_id", userID, "error", err)
+		http.Error(w, "failed to delete category", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}

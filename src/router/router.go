@@ -46,5 +46,7 @@ func (r *Router) registerBusinessRoutes() {
 func (r *Router) registerCategoryRoutes() {
 	http.Handle("POST /api/v1/category", auth.Middleware(http.HandlerFunc(r.categoryHandler.HandleAddCategory)))
 	http.Handle("PATCH /api/v1/category/{id}", auth.Middleware(http.HandlerFunc(r.categoryHandler.HandleEditCategory)))
+	http.Handle("GET /api/v1/category", auth.Middleware(http.HandlerFunc(r.categoryHandler.HandleGetCategories)))
+	http.Handle("DELETE /api/v1/category/{id}", auth.Middleware(http.HandlerFunc(r.categoryHandler.HandleDeleteCategory)))
 
 }
