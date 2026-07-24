@@ -67,7 +67,7 @@ func ParseToken(tokenString string) (*Claims, error) {
 		tokenString,
 		claims,
 		func(token *jwt.Token) (any, error) {
-			return ([]byte(os.Getenv("JWT_SECRET"))), nil
+			return ([]byte(os.Getenv("JWT_SECRET_KEY"))), nil
 		},
 	)
 

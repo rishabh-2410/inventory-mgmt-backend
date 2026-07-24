@@ -1,6 +1,8 @@
 package auth
 
 import (
+	"context"
+	"inventory-backend/src/requestcontext"
 	"log/slog"
 	"net/http"
 	"strings"
@@ -16,7 +18,7 @@ func Middleware(next http.Handler) http.Handler {
 		// If header is empty, unauthorized
 		if authHeader == "" {
 			slog.Error("auth middleware missing authorization header method=%s path=%s", r.Method, r.URL.Path)
-			http.Error(w, "Missing auth header", http.StatusUnauthorized)
+			http.Error(w, "User is not authorized", http.StatusUnauthorized)
 			return
 		}
 
@@ -50,7 +52,32 @@ func Middleware(next http.Handler) http.Handler {
 			return
 		}
 
-		slog.Info("auth middleware authorized method=%s path=%s user_id=%s", r.Method, r.URL.Path, claims.UserID)
+		slog.Debug("User claims", "claims", claims)
+
+		slog.Debug("auth middleware authenticated", "method", r.Method, "path", r.URL.Path, "user_id", claims.Subject)
+
+		slog.Info("user authenticated", "user_id", claims.Subject)
+
+		// Create a new context with value and add the user id with a key USERIDKEY
+		ctx := context.WithValue(
+			r.Context(),
+			requestcontext.UserIDKey,
+			claims.Subject,
+		)
+
+		ctx = context.WithValue(
+			ctx,
+			requestcontext.BusinessIDKey,
+			claims.BusinessID,
+		)
+
+		ctx = context.WithValue(
+			ctx,
+			requestcontext.RoleIDKey,
+			claims.Role,
+		)
+		// Send the next context as part of the request and forward request to next handler
+		next.ServeHTTP(w, r.WithContext(ctx))
 
 	})
 }

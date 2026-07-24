@@ -3,12 +3,15 @@ package main
 import (
 	conn "inventory-backend/src/db"
 	businessHandler "inventory-backend/src/handlers/business"
+	categoryhandler "inventory-backend/src/handlers/category"
 	userhandler "inventory-backend/src/handlers/user"
 	businessRepo "inventory-backend/src/repository/business"
+	categoryRepo "inventory-backend/src/repository/categories"
 	tokenRepo "inventory-backend/src/repository/token"
 	userRepo "inventory-backend/src/repository/user"
 	router "inventory-backend/src/router"
 	businessservice "inventory-backend/src/services/business"
+	categoryservice "inventory-backend/src/services/category"
 	userservice "inventory-backend/src/services/user"
 	"inventory-backend/src/validation"
 	"log"
@@ -47,11 +50,13 @@ func main() {
 	userRepository := userRepo.NewUserRepo(db)
 	tokenRepository := tokenRepo.NewTokenRepo(db)
 	businessRepository := businessRepo.NewBusinessRepo(db)
+	categoryRepository := categoryRepo.NewCategoryRepo(db)
 
 	slog.Info("repositories initialized")
 
 	userservice := userservice.New(userRepository, tokenRepository)
 	businessservice := businessservice.New(businessRepository)
+	categoryservice := categoryservice.New(categoryRepository)
 
 	slog.Info("services initialized")
 
@@ -61,7 +66,10 @@ func main() {
 	businessHanlder := businessHandler.New(businessservice)
 	slog.Info("handlers initialized")
 
-	router := router.New(userHandler, businessHanlder)
+	categoryHandler := categoryhandler.New(categoryservice)
+	slog.Info("handlers initialized")
+
+	router := router.New(userHandler, businessHanlder, categoryHandler)
 
 	router.RegisterRoutes()
 

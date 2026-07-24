@@ -1,7 +1,9 @@
 package router
 
 import (
+	"inventory-backend/src/auth"
 	business "inventory-backend/src/handlers/business"
+	category "inventory-backend/src/handlers/category"
 	user "inventory-backend/src/handlers/user"
 	"log/slog"
 	"net/http"
@@ -10,12 +12,14 @@ import (
 type Router struct {
 	userHandler     *user.Handler
 	businessHandler *business.Handler
+	categoryHandler *category.Handler
 }
 
-func New(userHandler *user.Handler, businessHandler *business.Handler) *Router {
+func New(userHandler *user.Handler, businessHandler *business.Handler, categoryHandler *category.Handler) *Router {
 	return &Router{
 		userHandler:     userHandler,
 		businessHandler: businessHandler,
+		categoryHandler: categoryHandler,
 	}
 }
 
@@ -23,6 +27,7 @@ func (r *Router) RegisterRoutes() {
 	slog.Info("registering HTTP routes")
 	r.registerAuthRoutes()
 	r.registerBusinessRoutes()
+	r.registerCategoryRoutes()
 
 }
 
@@ -35,5 +40,11 @@ func (r *Router) registerAuthRoutes() {
 
 func (r *Router) registerBusinessRoutes() {
 	http.HandleFunc("POST /api/v1/business", r.businessHandler.HandleAddBusiness)
+
+}
+
+func (r *Router) registerCategoryRoutes() {
+	http.Handle("POST /api/v1/category", auth.Middleware(http.HandlerFunc(r.categoryHandler.HandleAddCategory)))
+	http.Handle("PATCH /api/v1/category/{id}", auth.Middleware(http.HandlerFunc(r.categoryHandler.HandleEditCategory)))
 
 }

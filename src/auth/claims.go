@@ -8,8 +8,7 @@ import (
 )
 
 type Claims struct {
-	Role                 enums.UserRole `json:"role"`
-	UserID               uuid.UUID      `json:"user_id"`
-	BusinessID           uuid.UUID      `json:"business_id"`
-	jwt.RegisteredClaims `json:"-"`
+	Role       enums.UserRole `json:"role"`
+	BusinessID uuid.UUID      `json:"business_id"`
+	jwt.RegisteredClaims
 }
