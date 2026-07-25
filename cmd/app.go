@@ -5,14 +5,18 @@ import (
 	businessHandler "inventory-backend/src/handlers/business"
 	categoryhandler "inventory-backend/src/handlers/category"
 	userhandler "inventory-backend/src/handlers/user"
+	warehouseHandler "inventory-backend/src/handlers/warehouse"
 	businessRepo "inventory-backend/src/repository/business"
 	categoryRepo "inventory-backend/src/repository/categories"
 	tokenRepo "inventory-backend/src/repository/token"
 	userRepo "inventory-backend/src/repository/user"
+	warehouseRepo "inventory-backend/src/repository/warehouse"
 	router "inventory-backend/src/router"
 	businessservice "inventory-backend/src/services/business"
 	categoryservice "inventory-backend/src/services/category"
 	userservice "inventory-backend/src/services/user"
+
+	warehouseservice "inventory-backend/src/services/warehouse"
 	"inventory-backend/src/validation"
 	"log"
 	"log/slog"
@@ -51,12 +55,14 @@ func main() {
 	tokenRepository := tokenRepo.NewTokenRepo(db)
 	businessRepository := businessRepo.NewBusinessRepo(db)
 	categoryRepository := categoryRepo.NewCategoryRepo(db)
+	warehouseRepository := warehouseRepo.NewWarehouseRepo(db)
 
 	slog.Info("repositories initialized")
 
 	userservice := userservice.New(userRepository, tokenRepository)
 	businessservice := businessservice.New(businessRepository)
 	categoryservice := categoryservice.New(categoryRepository)
+	warehouseservice := warehouseservice.New(warehouseRepository)
 
 	slog.Info("services initialized")
 
@@ -69,7 +75,10 @@ func main() {
 	categoryHandler := categoryhandler.New(categoryservice)
 	slog.Info("handlers initialized")
 
-	router := router.New(userHandler, businessHanlder, categoryHandler)
+	warehouseHandler := warehouseHandler.New(warehouseservice)
+	slog.Info("handlers initialized")
+
+	router := router.New(userHandler, businessHanlder, categoryHandler, warehouseHandler)
 
 	router.RegisterRoutes()
 
