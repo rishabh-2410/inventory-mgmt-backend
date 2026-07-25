@@ -1,2 +1,3 @@
-ALTER TsABLE products
+ALTER TABLE products
 ADD COLUMN sku TEXT NOT NULL;
+

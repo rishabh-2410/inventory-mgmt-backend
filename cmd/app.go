@@ -4,16 +4,19 @@ import (
 	conn "inventory-backend/src/db"
 	businessHandler "inventory-backend/src/handlers/business"
 	categoryhandler "inventory-backend/src/handlers/category"
+	producthandler "inventory-backend/src/handlers/product"
 	userhandler "inventory-backend/src/handlers/user"
 	warehouseHandler "inventory-backend/src/handlers/warehouse"
 	businessRepo "inventory-backend/src/repository/business"
 	categoryRepo "inventory-backend/src/repository/categories"
+	productRepo "inventory-backend/src/repository/product"
 	tokenRepo "inventory-backend/src/repository/token"
 	userRepo "inventory-backend/src/repository/user"
 	warehouseRepo "inventory-backend/src/repository/warehouse"
 	router "inventory-backend/src/router"
 	businessservice "inventory-backend/src/services/business"
 	categoryservice "inventory-backend/src/services/category"
+	productservice "inventory-backend/src/services/product"
 	userservice "inventory-backend/src/services/user"
 
 	warehouseservice "inventory-backend/src/services/warehouse"
@@ -56,14 +59,14 @@ func main() {
 	businessRepository := businessRepo.NewBusinessRepo(db)
 	categoryRepository := categoryRepo.NewCategoryRepo(db)
 	warehouseRepository := warehouseRepo.NewWarehouseRepo(db)
-
+	productRepository := productRepo.NewProductRepo(db)
 	slog.Info("repositories initialized")
 
 	userservice := userservice.New(userRepository, tokenRepository)
 	businessservice := businessservice.New(businessRepository)
 	categoryservice := categoryservice.New(categoryRepository)
 	warehouseservice := warehouseservice.New(warehouseRepository)
-
+	productservice := productservice.New(productRepository)
 	slog.Info("services initialized")
 
 	userHandler := userhandler.New(userservice)
@@ -78,7 +81,10 @@ func main() {
 	warehouseHandler := warehouseHandler.New(warehouseservice)
 	slog.Info("handlers initialized")
 
-	router := router.New(userHandler, businessHanlder, categoryHandler, warehouseHandler)
+	productHandler := producthandler.New(productservice)
+	slog.Info("handlers initialized")
+
+	router := router.New(userHandler, businessHanlder, categoryHandler, warehouseHandler, productHandler)
 
 	router.RegisterRoutes()
 

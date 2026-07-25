@@ -4,6 +4,7 @@ import (
 	"inventory-backend/src/auth"
 	business "inventory-backend/src/handlers/business"
 	category "inventory-backend/src/handlers/category"
+	product "inventory-backend/src/handlers/product"
 	user "inventory-backend/src/handlers/user"
 	warehouse "inventory-backend/src/handlers/warehouse"
 	"log/slog"
@@ -15,14 +16,16 @@ type Router struct {
 	businessHandler  *business.Handler
 	categoryHandler  *category.Handler
 	warehouseHandler *warehouse.Handler
+	productHandler   *product.Handler
 }
 
-func New(userHandler *user.Handler, businessHandler *business.Handler, categoryHandler *category.Handler, warehouseHandler *warehouse.Handler) *Router {
+func New(userHandler *user.Handler, businessHandler *business.Handler, categoryHandler *category.Handler, warehouseHandler *warehouse.Handler, productHandler *product.Handler) *Router {
 	return &Router{
 		userHandler:      userHandler,
 		businessHandler:  businessHandler,
 		categoryHandler:  categoryHandler,
 		warehouseHandler: warehouseHandler,
+		productHandler:   productHandler,
 	}
 }
 
@@ -32,7 +35,7 @@ func (r *Router) RegisterRoutes() {
 	r.registerBusinessRoutes()
 	r.registerCategoryRoutes()
 	r.registerWarehouseRoutes()
-
+	r.registerProductRoutes()
 }
 
 func (r *Router) registerAuthRoutes() {
@@ -61,4 +64,11 @@ func (r *Router) registerWarehouseRoutes() {
 	http.Handle("GET /api/v1/warehouse", auth.Middleware(http.HandlerFunc(r.warehouseHandler.HandleGetWarehouses)))
 	http.Handle("DELETE /api/v1/warehouse/{id}", auth.Middleware(http.HandlerFunc(r.warehouseHandler.HandleDeleteWarehouse)))
 
+}
+
+func (r *Router) registerProductRoutes() {
+	http.Handle("POST /api/v1/product", auth.Middleware(http.HandlerFunc(r.productHandler.HandleAddProduct)))
+	http.Handle("PATCH /api/v1/product/{id}", auth.Middleware(http.HandlerFunc(r.productHandler.HandleEditProduct)))
+	http.Handle("GET /api/v1/product", auth.Middleware(http.HandlerFunc(r.productHandler.HandleGetProducts)))
+	http.Handle("DELETE /api/v1/product/{id}", auth.Middleware(http.HandlerFunc(r.productHandler.HandleDeleteProduct)))
 }
