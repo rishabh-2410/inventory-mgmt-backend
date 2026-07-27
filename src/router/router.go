@@ -5,6 +5,7 @@ import (
 	business "inventory-backend/src/handlers/business"
 	category "inventory-backend/src/handlers/category"
 	product "inventory-backend/src/handlers/product"
+	stockmovement "inventory-backend/src/handlers/stock_movement"
 	user "inventory-backend/src/handlers/user"
 	warehouse "inventory-backend/src/handlers/warehouse"
 	"log/slog"
@@ -12,20 +13,29 @@ import (
 )
 
 type Router struct {
-	userHandler      *user.Handler
-	businessHandler  *business.Handler
-	categoryHandler  *category.Handler
-	warehouseHandler *warehouse.Handler
-	productHandler   *product.Handler
+	userHandler          *user.Handler
+	businessHandler      *business.Handler
+	categoryHandler      *category.Handler
+	warehouseHandler     *warehouse.Handler
+	productHandler       *product.Handler
+	stockMovementHandler *stockmovement.Handler
 }
 
-func New(userHandler *user.Handler, businessHandler *business.Handler, categoryHandler *category.Handler, warehouseHandler *warehouse.Handler, productHandler *product.Handler) *Router {
+func New(
+	userHandler *user.Handler,
+	businessHandler *business.Handler,
+	categoryHandler *category.Handler,
+	warehouseHandler *warehouse.Handler,
+	productHandler *product.Handler,
+	stockMovementHandler *stockmovement.Handler) *Router {
+
 	return &Router{
-		userHandler:      userHandler,
-		businessHandler:  businessHandler,
-		categoryHandler:  categoryHandler,
-		warehouseHandler: warehouseHandler,
-		productHandler:   productHandler,
+		userHandler:          userHandler,
+		businessHandler:      businessHandler,
+		categoryHandler:      categoryHandler,
+		warehouseHandler:     warehouseHandler,
+		productHandler:       productHandler,
+		stockMovementHandler: stockMovementHandler,
 	}
 }
 
@@ -36,6 +46,7 @@ func (r *Router) RegisterRoutes() {
 	r.registerCategoryRoutes()
 	r.registerWarehouseRoutes()
 	r.registerProductRoutes()
+	r.registerStockMovementRoutes()
 }
 
 func (r *Router) registerAuthRoutes() {
@@ -71,4 +82,8 @@ func (r *Router) registerProductRoutes() {
 	http.Handle("PATCH /api/v1/product/{id}", auth.Middleware(http.HandlerFunc(r.productHandler.HandleEditProduct)))
 	http.Handle("GET /api/v1/product", auth.Middleware(http.HandlerFunc(r.productHandler.HandleGetProducts)))
 	http.Handle("DELETE /api/v1/product/{id}", auth.Middleware(http.HandlerFunc(r.productHandler.HandleDeleteProduct)))
+}
+
+func (r *Router) registerStockMovementRoutes() {
+	http.Handle("PATCH /api/v1/stock-movement", auth.Middleware(http.HandlerFunc(r.stockMovementHandler.HandleUpdateStockMovement)))
 }

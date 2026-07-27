@@ -5,11 +5,13 @@ import (
 	businessHandler "inventory-backend/src/handlers/business"
 	categoryhandler "inventory-backend/src/handlers/category"
 	producthandler "inventory-backend/src/handlers/product"
+	stockmovementhandler "inventory-backend/src/handlers/stock_movement"
 	userhandler "inventory-backend/src/handlers/user"
 	warehouseHandler "inventory-backend/src/handlers/warehouse"
 	businessRepo "inventory-backend/src/repository/business"
 	categoryRepo "inventory-backend/src/repository/categories"
 	productRepo "inventory-backend/src/repository/product"
+	stockmovementRepo "inventory-backend/src/repository/stock_movement"
 	tokenRepo "inventory-backend/src/repository/token"
 	userRepo "inventory-backend/src/repository/user"
 	warehouseRepo "inventory-backend/src/repository/warehouse"
@@ -17,6 +19,7 @@ import (
 	businessservice "inventory-backend/src/services/business"
 	categoryservice "inventory-backend/src/services/category"
 	productservice "inventory-backend/src/services/product"
+	stockmovementservice "inventory-backend/src/services/stock_movement"
 	userservice "inventory-backend/src/services/user"
 
 	warehouseservice "inventory-backend/src/services/warehouse"
@@ -60,6 +63,7 @@ func main() {
 	categoryRepository := categoryRepo.NewCategoryRepo(db)
 	warehouseRepository := warehouseRepo.NewWarehouseRepo(db)
 	productRepository := productRepo.NewProductRepo(db)
+	stockMovementRepository := stockmovementRepo.NewStockMovementRepo(db)
 	slog.Info("repositories initialized")
 
 	userservice := userservice.New(userRepository, tokenRepository)
@@ -67,6 +71,7 @@ func main() {
 	categoryservice := categoryservice.New(categoryRepository)
 	warehouseservice := warehouseservice.New(warehouseRepository)
 	productservice := productservice.New(productRepository)
+	stockmovementservice := stockmovementservice.New(stockMovementRepository)
 	slog.Info("services initialized")
 
 	userHandler := userhandler.New(userservice)
@@ -84,7 +89,10 @@ func main() {
 	productHandler := producthandler.New(productservice)
 	slog.Info("handlers initialized")
 
-	router := router.New(userHandler, businessHanlder, categoryHandler, warehouseHandler, productHandler)
+	stockMovementHandler := stockmovementhandler.New(stockmovementservice)
+	slog.Info("handlers initialized")
+
+	router := router.New(userHandler, businessHanlder, categoryHandler, warehouseHandler, productHandler, stockMovementHandler)
 
 	router.RegisterRoutes()
 
