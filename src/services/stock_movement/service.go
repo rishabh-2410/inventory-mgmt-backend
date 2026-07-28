@@ -33,3 +33,25 @@ func (s *Service) UpdateStockMovement(userID uuid.UUID, businessID uuid.UUID, st
 		CreatedAt:        stockMovement.CreatedAt,
 	}, nil
 }
+
+func (s *Service) GetStockMovementHistory(businessID uuid.UUID) ([]*resmodels.StockMovementHistoryResponseDTO, error) {
+	stockMovementsHistory, err := s.stockMovementRepo.GetStockMovementHistory(businessID)
+	if err != nil {
+		return nil, err
+	}
+
+	stockMovementHistoryResponseDTOs := []*resmodels.StockMovementHistoryResponseDTO{}
+	for _, stockMovementHistory := range stockMovementsHistory {
+		stockMovementHistoryResponseDTOs = append(stockMovementHistoryResponseDTOs, &resmodels.StockMovementHistoryResponseDTO{
+			UserID:           stockMovementHistory.UserID,
+			WarehouseID:      stockMovementHistory.WarehouseID,
+			ProductID:        stockMovementHistory.ProductID,
+			MovementType:     stockMovementHistory.MovementType,
+			MovementQuantity: stockMovementHistory.MovementQuantity,
+			Reason:           stockMovementHistory.Reason,
+			CreatedAt:        stockMovementHistory.CreatedAt,
+		})
+	}
+
+	return stockMovementHistoryResponseDTOs, nil
+}

@@ -18,3 +18,13 @@ type StockMovement struct {
 	Reason           string
 	CreatedAt        time.Time
 }
+
+type StockMovementHistory struct {
+	UserID           uuid.UUID
+	WarehouseID      uuid.UUID
+	ProductID        uuid.UUID
+	MovementType     string
+	MovementQuantity float64
+	Reason           string
+	CreatedAt        time.Time
+}

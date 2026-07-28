@@ -4,6 +4,7 @@ import (
 	"inventory-backend/src/auth"
 	business "inventory-backend/src/handlers/business"
 	category "inventory-backend/src/handlers/category"
+	dashboardHandler "inventory-backend/src/handlers/dashaboard"
 	product "inventory-backend/src/handlers/product"
 	stockmovement "inventory-backend/src/handlers/stock_movement"
 	user "inventory-backend/src/handlers/user"
@@ -19,6 +20,7 @@ type Router struct {
 	warehouseHandler     *warehouse.Handler
 	productHandler       *product.Handler
 	stockMovementHandler *stockmovement.Handler
+	dashboardHandler     *dashboardHandler.Handler
 }
 
 func New(
@@ -27,7 +29,8 @@ func New(
 	categoryHandler *category.Handler,
 	warehouseHandler *warehouse.Handler,
 	productHandler *product.Handler,
-	stockMovementHandler *stockmovement.Handler) *Router {
+	stockMovementHandler *stockmovement.Handler,
+	dashboardHandler *dashboardHandler.Handler) *Router {
 
 	return &Router{
 		userHandler:          userHandler,
@@ -36,6 +39,7 @@ func New(
 		warehouseHandler:     warehouseHandler,
 		productHandler:       productHandler,
 		stockMovementHandler: stockMovementHandler,
+		dashboardHandler:     dashboardHandler,
 	}
 }
 
@@ -47,6 +51,7 @@ func (r *Router) RegisterRoutes() {
 	r.registerWarehouseRoutes()
 	r.registerProductRoutes()
 	r.registerStockMovementRoutes()
+	r.registerDashboardRoutes()
 }
 
 func (r *Router) registerAuthRoutes() {
@@ -86,4 +91,9 @@ func (r *Router) registerProductRoutes() {
 
 func (r *Router) registerStockMovementRoutes() {
 	http.Handle("PATCH /api/v1/stock-movement", auth.Middleware(http.HandlerFunc(r.stockMovementHandler.HandleUpdateStockMovement)))
+	http.Handle("GET /api/v1/stock-movement", auth.Middleware(http.HandlerFunc(r.stockMovementHandler.HandleGetStockMovementHistory)))
+}
+
+func (r *Router) registerDashboardRoutes() {
+	http.Handle("GET /api/v1/dashboard", auth.Middleware(http.HandlerFunc(r.dashboardHandler.HandleGetDashboardData)))
 }

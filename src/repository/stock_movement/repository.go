@@ -51,12 +51,7 @@ func (r *StockMovementRepo) UpdateStockMovement(userID uuid.UUID, businessID uui
 	if err != nil {
 		return float64(0), nil, err
 	}
-	// #region agent log
-	debugLog("H3", "repository.go:UpdateStockMovement", "branch selected", map[string]interface{}{
-		"productStockExists": productStockExists,
-		"movementType":       stockMovementReq.MovementType,
-	})
-	// #endregion
+
 	if !productStockExists {
 		if stockMovementReq.MovementType == "RECEIVE" {
 			currentStock, stockMovement, err = r.createProductStockAndUpdateStockMovement(userID, businessID, stockMovementReq)
@@ -77,8 +72,66 @@ func (r *StockMovementRepo) UpdateStockMovement(userID uuid.UUID, businessID uui
 	return currentStock, stockMovement, nil
 }
 
-// ----------------------------- HELPERS----------------------------------
+func (r *StockMovementRepo) GetStockMovementHistory(businessID uuid.UUID) ([]*dbmodels.StockMovementHistory, error) {
+	query := `
+		SELECT user_id, warehouse_id, product_id, movement_type, movement_quantity, reason, created_at FROM stock_movement
+		WHERE business_id = $1	
+	`
+	stockMovementsHistory := []*dbmodels.StockMovementHistory{}
+	rows, err := r.db.Query(query, businessID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var stockMovementHistory dbmodels.StockMovementHistory
+		err = rows.Scan(&stockMovementHistory.UserID, &stockMovementHistory.WarehouseID, &stockMovementHistory.ProductID, &stockMovementHistory.MovementType, &stockMovementHistory.MovementQuantity, &stockMovementHistory.Reason, &stockMovementHistory.CreatedAt)
+		if err != nil {
+			return nil, err
+		}
+		stockMovementsHistory = append(stockMovementsHistory, &stockMovementHistory)
+	}
 
+	if err := rows.Err(); err != nil {
+		slog.Error("failed to fetch stock movement history", "error", err)
+		return nil, err
+	}
+
+	slog.Info("fetched stock movement history successfully for", "business_id", businessID)
+	return stockMovementsHistory, nil
+}
+
+func (r *StockMovementRepo) GetStockMovementHistoryByWarehouse(businessID uuid.UUID, warehouseID uuid.UUID) ([]*dbmodels.StockMovementHistory, error) {
+	query := `
+		SELECT user_id, warehouse_id, product_id, movement_type, movement_quantity, reason, created_at FROM stock_movement
+		WHERE business_id = $1 AND warehouse_id = $2
+	`
+	stockMovementsHistory := []*dbmodels.StockMovementHistory{}
+	rows, err := r.db.Query(query, businessID, warehouseID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var stockMovementHistory dbmodels.StockMovementHistory
+		err = rows.Scan(&stockMovementHistory.UserID, &stockMovementHistory.WarehouseID, &stockMovementHistory.ProductID, &stockMovementHistory.MovementType, &stockMovementHistory.MovementQuantity, &stockMovementHistory.Reason, &stockMovementHistory.CreatedAt)
+		if err != nil {
+			return nil, err
+		}
+
+		stockMovementsHistory = append(stockMovementsHistory, &stockMovementHistory)
+	}
+
+	if err := rows.Err(); err != nil {
+		slog.Error("failed to fetch stock movement history by product id", "error", err)
+		return nil, err
+	}
+
+	slog.Info("fetched stock movement history by warehouse successfully for", "business_id", businessID)
+	return stockMovementsHistory, nil
+}
+
+// ----------------------------- HELPERS----------------------------------
 func (r *StockMovementRepo) validateProductStockExists(productID uuid.UUID, warehouseID uuid.UUID) (bool, error) {
 	query := `
 		SELECT COUNT(*) FROM product_stock

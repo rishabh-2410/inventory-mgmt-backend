@@ -78,3 +78,36 @@ func (h *Handler) HandleUpdateStockMovement(w http.ResponseWriter, r *http.Reque
 	}
 
 }
+
+func (h *Handler) HandleGetStockMovementHistory(w http.ResponseWriter, r *http.Request) {
+
+	userID, ok := requestcontext.GetUserID(r.Context())
+	if !ok {
+		slog.Error("invalid user: missing user_id", "endpoint", r.URL.Path, "user_id", userID)
+		http.Error(w, "User is not authorized to perform this operation", http.StatusUnauthorized)
+		return
+	}
+
+	businessID, ok := requestcontext.GetBusinessID(r.Context())
+	if !ok {
+		slog.Error("invalid user: missing business_id", "endpoint", r.URL.Path, "business_id", businessID)
+		http.Error(w, "User is not authorized to perform this operation", http.StatusUnauthorized)
+		return
+	}
+
+	response, err := h.stockMovementService.GetStockMovementHistory(businessID)
+	if err != nil {
+		slog.Error("get stock movement history failed", "endpoint", r.URL.Path, "error", err)
+		http.Error(w, "Unable to get stock movement history", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	if err = json.NewEncoder(w).Encode(response); err != nil {
+		slog.Error("failed to get stock movement history", "endpoint", r.URL.Path, "error", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+}

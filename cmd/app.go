@@ -4,12 +4,14 @@ import (
 	conn "inventory-backend/src/db"
 	businessHandler "inventory-backend/src/handlers/business"
 	categoryhandler "inventory-backend/src/handlers/category"
+	dashboardHandler "inventory-backend/src/handlers/dashaboard"
 	producthandler "inventory-backend/src/handlers/product"
 	stockmovementhandler "inventory-backend/src/handlers/stock_movement"
 	userhandler "inventory-backend/src/handlers/user"
 	warehouseHandler "inventory-backend/src/handlers/warehouse"
 	businessRepo "inventory-backend/src/repository/business"
 	categoryRepo "inventory-backend/src/repository/categories"
+	dashboardRepo "inventory-backend/src/repository/dashboard"
 	productRepo "inventory-backend/src/repository/product"
 	stockmovementRepo "inventory-backend/src/repository/stock_movement"
 	tokenRepo "inventory-backend/src/repository/token"
@@ -18,6 +20,7 @@ import (
 	router "inventory-backend/src/router"
 	businessservice "inventory-backend/src/services/business"
 	categoryservice "inventory-backend/src/services/category"
+	dashboardservice "inventory-backend/src/services/dashboard"
 	productservice "inventory-backend/src/services/product"
 	stockmovementservice "inventory-backend/src/services/stock_movement"
 	userservice "inventory-backend/src/services/user"
@@ -64,6 +67,7 @@ func main() {
 	warehouseRepository := warehouseRepo.NewWarehouseRepo(db)
 	productRepository := productRepo.NewProductRepo(db)
 	stockMovementRepository := stockmovementRepo.NewStockMovementRepo(db)
+	dashboardRepository := dashboardRepo.NewDashboardRepo(db)
 	slog.Info("repositories initialized")
 
 	userservice := userservice.New(userRepository, tokenRepository)
@@ -72,6 +76,7 @@ func main() {
 	warehouseservice := warehouseservice.New(warehouseRepository)
 	productservice := productservice.New(productRepository)
 	stockmovementservice := stockmovementservice.New(stockMovementRepository)
+	dashboardservice := dashboardservice.New(dashboardRepository)
 	slog.Info("services initialized")
 
 	userHandler := userhandler.New(userservice)
@@ -92,7 +97,10 @@ func main() {
 	stockMovementHandler := stockmovementhandler.New(stockmovementservice)
 	slog.Info("handlers initialized")
 
-	router := router.New(userHandler, businessHanlder, categoryHandler, warehouseHandler, productHandler, stockMovementHandler)
+	dashboardHandler := dashboardHandler.New(dashboardservice)
+	slog.Info("handlers initialized")
+
+	router := router.New(userHandler, businessHanlder, categoryHandler, warehouseHandler, productHandler, stockMovementHandler, dashboardHandler)
 
 	router.RegisterRoutes()
 
