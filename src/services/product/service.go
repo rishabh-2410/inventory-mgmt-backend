@@ -112,3 +112,30 @@ func (s *Service) DeleteProduct(productID uuid.UUID, businessID uuid.UUID) error
 
 	return nil
 }
+
+func (s *Service) ListProductsWithStock(businessID uuid.UUID) ([]resmodels.ProductWithStock, error) {
+	productsWithStock, err := s.productRepo.ListProductsWithStock(businessID)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]resmodels.ProductWithStock, 0, len(productsWithStock))
+	for _, productWithStock := range productsWithStock {
+		result = append(result, resmodels.ProductWithStock{
+			AddProductResponseDTO: resmodels.AddProductResponseDTO{
+				ID:           productWithStock.ID,
+				Name:         productWithStock.Name,
+				BusinessID:   productWithStock.BusinessID,
+				SKU:          productWithStock.SKU,
+				SellingPrice: productWithStock.SellingPrice,
+				CostPrice:    productWithStock.CostPrice,
+				CategoryID:   productWithStock.CategoryID,
+				ImageURL:     productWithStock.ImageURL,
+				CreatedAt:    productWithStock.CreatedAt,
+				UpdatedAt:    productWithStock.UpdatedAt,
+			},
+			TotalStock: productWithStock.TotalStock,
+		})
+	}
+	return result, nil
+}

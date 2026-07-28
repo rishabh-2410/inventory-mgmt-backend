@@ -18,3 +18,7 @@ func New(dashboardRepo *dashboardRepository.DashboardRepo) *Service {
 func (s *Service) GetDashboardData(businessID uuid.UUID) (*resmodels.DashboardData, error) {
 	return s.dashboardRepo.GetDashboardData(businessID)
 }
+
+func (s *Service) GetInventoryStats(businessID uuid.UUID) (*resmodels.InventoryStats, error) {
+	return s.dashboardRepo.GetInventoryStats(businessID)
+}

@@ -18,3 +18,8 @@ type AddProductResponseDTO struct {
 	CreatedAt    time.Time `json:"created_at"`
 	UpdatedAt    time.Time `json:"updated_at"`
 }
+
+type ProductWithStock struct {
+	AddProductResponseDTO
+	TotalStock float64 `json:"total_stock"`
+}

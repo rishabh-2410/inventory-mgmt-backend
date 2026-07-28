@@ -87,6 +87,7 @@ func (r *Router) registerProductRoutes() {
 	http.Handle("PATCH /api/v1/product/{id}", auth.Middleware(http.HandlerFunc(r.productHandler.HandleEditProduct)))
 	http.Handle("GET /api/v1/product", auth.Middleware(http.HandlerFunc(r.productHandler.HandleGetProducts)))
 	http.Handle("DELETE /api/v1/product/{id}", auth.Middleware(http.HandlerFunc(r.productHandler.HandleDeleteProduct)))
+	http.Handle("GET /api/v1/product/stock/list", auth.Middleware(http.HandlerFunc(r.productHandler.HandleListProductsWithStock)))
 }
 
 func (r *Router) registerStockMovementRoutes() {
@@ -96,4 +97,5 @@ func (r *Router) registerStockMovementRoutes() {
 
 func (r *Router) registerDashboardRoutes() {
 	http.Handle("GET /api/v1/dashboard", auth.Middleware(http.HandlerFunc(r.dashboardHandler.HandleGetDashboardData)))
+	http.Handle("GET /api/v1/inventory/stats", auth.Middleware(http.HandlerFunc(r.dashboardHandler.HandleGetInventoryStats)))
 }

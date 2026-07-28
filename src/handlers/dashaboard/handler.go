@@ -41,3 +41,30 @@ func (h *Handler) HandleGetDashboardData(w http.ResponseWriter, r *http.Request)
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(dashboardData)
 }
+
+func (h *Handler) HandleGetInventoryStats(w http.ResponseWriter, r *http.Request) {
+
+	userID, ok := requestcontext.GetUserID(r.Context())
+	if !ok {
+		slog.Error("missing user id", "endpoint", r.URL.Path, "user_id", userID)
+		http.Error(w, "User is not authorized to perform this action", http.StatusUnauthorized)
+		return
+	}
+
+	businessID, ok := requestcontext.GetBusinessID(r.Context())
+	if !ok {
+		slog.Error("missing business id", "endpoint", r.URL.Path, "user_id", userID)
+		http.Error(w, "User is either not associated to a business or does not own one", http.StatusUnauthorized)
+		return
+	}
+
+	inventoryStats, err := h.dashboardService.GetInventoryStats(businessID)
+	if err != nil {
+		slog.Error("failed to get inventory stats", "endpoint", r.URL.Path, "user_id", userID, "error", err)
+		http.Error(w, "Failed to get inventory stats", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(inventoryStats)
+}

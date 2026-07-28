@@ -190,3 +190,34 @@ func (pr *ProductRepo) ValidateCategory(categoryID uuid.UUID, businessID uuid.UU
 
 	return exists, nil
 }
+
+func (pr *ProductRepo) ListProductsWithStock(businessID uuid.UUID) ([]dbmodel.ProductWithStock, error) {
+	query := `
+		SELECT p.*,
+			COALESCE(SUM(ps.current_stock), 0) AS total_stock
+		FROM products p
+		LEFT JOIN product_stock ps ON p.id = ps.product_id
+		WHERE p.business_id = $1
+		GROUP BY p.id
+	`
+	productsWithStock := make([]dbmodel.ProductWithStock, 0)
+	rows, err := pr.db.Query(query, businessID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var productWithStock dbmodel.ProductWithStock
+		err = rows.Scan(&productWithStock.ID, &productWithStock.Name, &productWithStock.CategoryID, &productWithStock.BusinessID, &productWithStock.SellingPrice, &productWithStock.CostPrice, &productWithStock.ImageURL, &productWithStock.CreatedAt, &productWithStock.UpdatedAt, &productWithStock.SKU, &productWithStock.TotalStock)
+		if err != nil {
+			return nil, err
+		}
+		productsWithStock = append(productsWithStock, productWithStock)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	slog.Info("listed products with stock successfully for", "business_id", businessID)
+	return productsWithStock, nil
+}

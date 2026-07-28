@@ -238,3 +238,42 @@ func (h *Handler) HandleDeleteProduct(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 }
+
+func (h *Handler) HandleListProductsWithStock(w http.ResponseWriter, r *http.Request) {
+	_, ok := requestcontext.GetUserID(r.Context())
+	if !ok {
+		slog.Error("[ListProductsWithStock] invalid user: missing user_id", "endpoint", r.URL.Path)
+		http.Error(w, "User is not authorized to perform this operation", http.StatusUnauthorized)
+		return
+	}
+
+	businessID, ok := requestcontext.GetBusinessID(r.Context())
+	if !ok {
+		slog.Error("[ListProductsWithStock] invalid user: missing business_id", "endpoint", r.URL.Path)
+		http.Error(w, "User is not authorized to perform this operation", http.StatusUnauthorized)
+		return
+	}
+
+	_, ok = requestcontext.GetUserRole(r.Context())
+	if !ok {
+		slog.Error("[ListProductsWithStock] invalid user: missing user role", "endpoint", r.URL.Path)
+		http.Error(w, "User is not authorized to perform this operation", http.StatusUnauthorized)
+		return
+	}
+
+	response, err := h.productService.ListProductsWithStock(businessID)
+	if err != nil {
+		slog.Error("[ListProductsWithStock] failed to list products with stock", "endpoint", r.URL.Path, "error", err)
+		http.Error(w, "failed to list products with stock", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	if err = json.NewEncoder(w).Encode(response); err != nil {
+		slog.Error("[ListProductsWithStock] failed to list products with stock", "endpoint", r.URL.Path, "error", err)
+		http.Error(w, "cannot fetch products with stock", http.StatusInternalServerError)
+		return
+	}
+}

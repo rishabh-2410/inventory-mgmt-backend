@@ -18,3 +18,8 @@ type Product struct {
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
 }
+
+type ProductWithStock struct {
+	Product
+	TotalStock float64
+}

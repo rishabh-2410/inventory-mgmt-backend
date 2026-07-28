@@ -5,3 +5,10 @@ type DashboardData struct {
 	LowStockProducts      int
 	OutOfStockProducts    int
 }
+
+type InventoryStats struct {
+	UnitsSold     float64
+	UnitsReceived float64
+	UnitsDamaged  float64
+	UnitsReturned float64
+}
