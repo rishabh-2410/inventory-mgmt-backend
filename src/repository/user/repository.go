@@ -74,7 +74,8 @@ func (ur *UserRepo) FindByID(userID uuid.UUID) (*dbmodel.User, error) {
 	return &user, nil
 }
 
-func (ur *UserRepo) AddUser(user *dbmodel.User) error {
+func (ur *UserRepo) AddUser(user *dbmodel.User) (uuid.UUID, error) {
+	var userID uuid.UUID
 	slog.Debug("adding user...", "email", user.Email, "name", user.Name)
 	err := ur.db.QueryRow(`INSERT INTO users(
     name,
@@ -82,16 +83,14 @@ func (ur *UserRepo) AddUser(user *dbmodel.User) error {
     password_hash,
 	role
 	) VALUES ($1,$2,$3, $4)
-	`, user.Name, user.Email, user.PasswordHash, user.Role).Err()
-
+	RETURNING id
+	`, user.Name, user.Email, user.PasswordHash, user.Role).Scan(&userID)
 	if err != nil {
 		slog.Error("failed to add new user", "email", user.Email, "err", err)
-		return err
+		return uuid.Nil, err
 	}
 
-	slog.Info("user added successfully", "email", user.Email)
-
-	return nil
+	return userID, nil
 
 }
 

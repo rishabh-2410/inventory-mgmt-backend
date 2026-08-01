@@ -7,8 +7,6 @@ import (
 	"inventory-backend/src/validation"
 	"log/slog"
 	"net/http"
-
-	"github.com/google/uuid"
 )
 
 type Handler struct {
@@ -40,9 +38,7 @@ func (bh *Handler) HandleAddBusiness(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userIDString := "93fd8b86-86c1-4e95-95bd-6c00f5b7eae2"
-	userID, err := uuid.Parse(userIDString)
-	response, err := bh.businessService.AddBusiness(userID, request)
+	response, err := bh.businessService.AddBusiness(request)
 
 	if err != nil {
 		if err.Error() == "business name is already taken" {

@@ -39,9 +39,9 @@ func (userHandler *Handler) HandleRegisterUser(w http.ResponseWriter,
 		return
 	}
 
-	err = userHandler.userService.RegisterUser(&request)
+	response, err := userHandler.userService.RegisterUser(&request)
 	if err != nil {
-		if err.Error() == "Email already exists" {
+		if err.Error() == "email already exists" {
 			slog.Error("user is already registered", "path", r.URL.Path, "email", request.Email, "err", err)
 			http.Error(w, "User is already registered", http.StatusConflict)
 		} else {
@@ -52,6 +52,11 @@ func (userHandler *Handler) HandleRegisterUser(w http.ResponseWriter,
 	}
 
 	w.WriteHeader(http.StatusOK)
+	if err = json.NewEncoder(w).Encode(response); err != nil {
+		slog.Error("register response encode failed", "path", r.URL.Path, "email", request.Email, "err", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
 }
 
 func (userHandler *Handler) HandleUserLogin(w http.ResponseWriter, r *http.Request) {

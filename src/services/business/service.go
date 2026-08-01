@@ -6,8 +6,6 @@ import (
 	resmodel "inventory-backend/src/models/res_dto"
 	repository "inventory-backend/src/repository/business"
 	"log/slog"
-
-	"github.com/google/uuid"
 )
 
 type Service struct {
@@ -20,7 +18,7 @@ func New(businessRepo *repository.BusinessRepo) *Service {
 	}
 }
 
-func (bs *Service) AddBusiness(userID uuid.UUID, createBusinessRequest *reqmodel.CreateBusinessRequestDTO) (*resmodel.CreateBusinessResponseDTO, error) {
+func (bs *Service) AddBusiness(createBusinessRequest *reqmodel.CreateBusinessRequestDTO) (*resmodel.CreateBusinessResponseDTO, error) {
 	business, err := bs.businessRepo.FindBusinessByName(createBusinessRequest.Name)
 	if err != nil && err.Error() != "sql: no rows in result set" {
 		slog.Error("failed to find business in db", "name", createBusinessRequest.Name, "err", err)
@@ -33,7 +31,7 @@ func (bs *Service) AddBusiness(userID uuid.UUID, createBusinessRequest *reqmodel
 
 	}
 
-	result, err := bs.businessRepo.CreateBusiness(userID, createBusinessRequest)
+	result, err := bs.businessRepo.CreateBusiness(createBusinessRequest)
 	if err != nil {
 		slog.Error("failed to add business", "name", createBusinessRequest.Name, "err", err)
 		return nil, err

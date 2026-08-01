@@ -26,24 +26,28 @@ func New(userRepo *userrepo.UserRepo, tokenRepo *tokenrepo.TokenRepo) *Service {
 	}
 }
 
-func (us *Service) RegisterUser(req *reqmodels.RegisterUserRequestDTO) error {
+func (us *Service) RegisterUser(req *reqmodels.RegisterUserRequestDTO) (*resmodels.RegisterUserResponseDTO, error) {
 	slog.Debug("registering user...", "email", req.Email, "name", req.Name)
 
 	existingUser, err := us.userRepo.FindByEmail(req.Email)
 	if err != nil && err.Error() != "sql: no rows in result set" {
 		slog.Error("Unable to check db for existing user ", req.Email, err)
-		return err
+		return nil, err
 	}
 
 	if existingUser != nil {
-		slog.Info("register user skipped ", "email", req.Email)
-		return errors.New("Email already exists")
+		if existingUser.BusinessID == nil {
+			return &resmodels.RegisterUserResponseDTO{ID: existingUser.ID}, nil // user is registered but not yet added to a business, so we can redirect them to the business registration page
+		} else {
+			slog.Info("register user skipped ", "email", req.Email)
+			return nil, errors.New("email already exists")
+		}
 	}
 
 	hashBytes, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
 		slog.Error("failed to hash passwd", "email", req.Email, "err", err)
-		return err
+		return nil, err
 	}
 
 	isActive := true
@@ -56,20 +60,22 @@ func (us *Service) RegisterUser(req *reqmodels.RegisterUserRequestDTO) error {
 		IsActive:     isActive,
 	}
 
-	err = us.userRepo.AddUser(newUser)
+	userID, err := us.userRepo.AddUser(newUser)
 	if err != nil {
 		slog.Error("failed to add user", "email", req.Email, "err", err)
-		return err
+		return nil, err
 	}
 
 	slog.Info("user registered successfully", "email", req.Email)
 
-	return nil
+	return &resmodels.RegisterUserResponseDTO{
+		ID: userID,
+	}, nil
 
 }
 
 func (us *Service) LoginUser(req *reqmodels.LoginUserRequestDTO) (*resmodels.LoginUserResponseDTO, error) {
-	slog.Debug("login user service start email=%s", req.Email)
+	slog.Debug("login user service start", "email", req.Email)
 	user, err := us.userRepo.FindByEmail(req.Email)
 	if err != nil {
 		slog.Error("login user lookup failed", "email", req.Email, "err", err)

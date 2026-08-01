@@ -6,8 +6,6 @@ import (
 	dbmodel "inventory-backend/src/models/db_object"
 	reqmodel "inventory-backend/src/models/req_dto"
 	"log/slog"
-
-	"github.com/google/uuid"
 )
 
 type BusinessRepo struct {
@@ -43,7 +41,7 @@ func (br *BusinessRepo) FindBusinessByName(businessName string) (*dbmodel.Busine
 	return result, nil
 }
 
-func (br *BusinessRepo) CreateBusiness(userID uuid.UUID, business *reqmodel.CreateBusinessRequestDTO) (*dbmodel.Businesss, error) {
+func (br *BusinessRepo) CreateBusiness(business *reqmodel.CreateBusinessRequestDTO) (*dbmodel.Businesss, error) {
 
 	tx, err := br.db.Begin()
 	if err != nil {
@@ -101,9 +99,9 @@ func (br *BusinessRepo) CreateBusiness(userID uuid.UUID, business *reqmodel.Crea
 		 WHERE 
 		   id=$2 
 		   AND business_id IS NULL 
-		`, result.ID, userID)
+		`, result.ID, business.UserID)
 	if err != nil {
-		slog.Error("unable to assign business to user", "user_id", userID, "err", err)
+		slog.Error("unable to assign business to user", "user_id", business.UserID, "err", err)
 		return nil, err
 	}
 
