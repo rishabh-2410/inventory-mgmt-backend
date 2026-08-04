@@ -98,12 +98,11 @@ func (us *Service) LoginUser(req *reqmodels.LoginUserRequestDTO) (*resmodels.Log
 		return nil, errors.New("role is required")
 	}
 
-	accessToken, err := auth.GenerateAccessToken(user.ID, *user.BusinessID, *user.Role)
+	accessToken, accessTokenExpiresAt, err := auth.GenerateAccessToken(user.ID, *user.BusinessID, *user.Role)
 	if err != nil {
 		slog.Error("login user access token generation failed", "user_id", user.ID, "err", err)
 		return nil, err
 	}
-
 	refreshToken, err := auth.GenerateRefreshToken()
 	if err != nil {
 		slog.Error("login user refresh token generation failed", "user_id", user.ID, "err", err)
@@ -121,15 +120,16 @@ func (us *Service) LoginUser(req *reqmodels.LoginUserRequestDTO) (*resmodels.Log
 	slog.Info("login user service success", "user_id", user.ID, "email", user.Email)
 
 	return &resmodels.LoginUserResponseDTO{
-		ID:           user.ID,
-		Name:         user.Name,
-		Email:        user.Email,
-		CreatedAt:    user.CreatedAt,
-		AccessToken:  accessToken,
-		RefreshToken: refreshToken,
-		IsActive:     user.IsActive,
-		BusinessID:   user.BusinessID,
-		Role:         user.Role,
+		ID:                   user.ID,
+		Name:                 user.Name,
+		Email:                user.Email,
+		CreatedAt:            user.CreatedAt,
+		AccessToken:          accessToken,
+		AccessTokenExpiresAt: accessTokenExpiresAt,
+		RefreshToken:         refreshToken,
+		IsActive:             user.IsActive,
+		BusinessID:           user.BusinessID,
+		Role:                 user.Role,
 	}, nil
 
 }
@@ -165,7 +165,7 @@ func (us *Service) RefreshToken(existingrefreshToken string) (*resmodels.LoginUs
 		return nil, err
 	}
 
-	accessToken, err := auth.GenerateAccessToken(user.ID, *user.BusinessID, *user.Role)
+	accessToken, accessTokenExpiresAt, err := auth.GenerateAccessToken(user.ID, *user.BusinessID, *user.Role)
 	if err != nil {
 		slog.Error("refresh token access token generation failed user_id=%s err=%v", userID, err)
 		return nil, err
@@ -188,14 +188,15 @@ func (us *Service) RefreshToken(existingrefreshToken string) (*resmodels.LoginUs
 	slog.Info("refresh token service success user_id=%s email=%s", user.ID, user.Email)
 
 	return &resmodels.LoginUserResponseDTO{
-		ID:           user.ID,
-		Name:         user.Name,
-		Email:        user.Email,
-		CreatedAt:    user.CreatedAt,
-		AccessToken:  accessToken,
-		RefreshToken: newRefreshToken,
-		IsActive:     user.IsActive,
-		BusinessID:   user.BusinessID,
-		Role:         user.Role,
+		ID:                   user.ID,
+		Name:                 user.Name,
+		Email:                user.Email,
+		CreatedAt:            user.CreatedAt,
+		AccessToken:          accessToken,
+		AccessTokenExpiresAt: accessTokenExpiresAt,
+		RefreshToken:         newRefreshToken,
+		IsActive:             user.IsActive,
+		BusinessID:           user.BusinessID,
+		Role:                 user.Role,
 	}, nil
 }

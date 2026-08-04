@@ -15,7 +15,7 @@ import (
 	"github.com/google/uuid"
 )
 
-func GenerateAccessToken(userID uuid.UUID, businessID uuid.UUID, role enums.UserRole) (string, error) {
+func GenerateAccessToken(userID uuid.UUID, businessID uuid.UUID, role enums.UserRole) (string, time.Time, error) {
 
 	// Create Claims
 	claims := &Claims{
@@ -37,10 +37,10 @@ func GenerateAccessToken(userID uuid.UUID, businessID uuid.UUID, role enums.User
 	// Sign token with secret
 	signedToken, err := token.SignedString(secretKey)
 	if err != nil {
-		return "", err
+		return "", claims.ExpiresAt.Time, err
 	}
 
-	return signedToken, nil
+	return signedToken, claims.ExpiresAt.Time, nil
 
 }
 

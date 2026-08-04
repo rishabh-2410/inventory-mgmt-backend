@@ -43,7 +43,7 @@ func (d *DashboardRepo) GetDashboardData(businessID uuid.UUID) (*resmodels.Dashb
 		FROM product_totals
 	`
 	err := d.db.QueryRow(query, businessID).Scan(
-		&result.CurrentInventoryValue,
+		&result.CurrentInventory,
 		&result.LowStockProducts,
 		&result.OutOfStockProducts,
 	)

@@ -9,16 +9,17 @@ import (
 )
 
 type LoginUserResponseDTO struct {
-	ID           uuid.UUID       `json:"id"`
-	Name         string          `json:"name"`
-	Email        string          `json:"email"`
-	BusinessID   *uuid.UUID      `json:"business_id"`
-	Role         *enums.UserRole `json:"role"`
-	IsActive     bool            `json:"is_active"`
-	AccessToken  string          `json:"access_token"`
-	RefreshToken string          `json:"refresh_token"`
-	CreatedAt    time.Time       `json:"created_at"`
-	UpdatedAt    time.Time       `json:"updated_at"`
+	ID                   uuid.UUID       `json:"id"`
+	Name                 string          `json:"name"`
+	Email                string          `json:"email"`
+	BusinessID           *uuid.UUID      `json:"business_id"`
+	Role                 *enums.UserRole `json:"role"`
+	IsActive             bool            `json:"is_active"`
+	AccessToken          string          `json:"access_token"`
+	AccessTokenExpiresAt time.Time       `json:"access_token_expires_at"`
+	RefreshToken         string          `json:"refresh_token"`
+	CreatedAt            time.Time       `json:"created_at"`
+	UpdatedAt            time.Time       `json:"updated_at"`
 }
 
 type RegisterUserResponseDTO struct {
