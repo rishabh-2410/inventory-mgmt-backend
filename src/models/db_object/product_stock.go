@@ -7,11 +7,11 @@ import (
 )
 
 type ProductStock struct {
-	ID           uuid.UUID
-	BusinessID   uuid.UUID
-	ProductID    uuid.UUID
-	WarehouseID  uuid.UUID
-	CurrentStock float64
-	CreatedAt    time.Time
-	UpdatedAt    time.Time
+	ID            uuid.UUID
+	ProductName   string
+	Sku           string
+	CategoryName  string
+	WarehouseName string
+	CurrentStock  float64
+	UpdatedAt     time.Time
 }

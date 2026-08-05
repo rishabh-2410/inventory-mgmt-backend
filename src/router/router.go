@@ -6,6 +6,7 @@ import (
 	category "inventory-backend/src/handlers/category"
 	dashboardHandler "inventory-backend/src/handlers/dashaboard"
 	product "inventory-backend/src/handlers/product"
+	productstock "inventory-backend/src/handlers/product_stock"
 	stockmovement "inventory-backend/src/handlers/stock_movement"
 	user "inventory-backend/src/handlers/user"
 	warehouse "inventory-backend/src/handlers/warehouse"
@@ -21,6 +22,7 @@ type Router struct {
 	productHandler       *product.Handler
 	stockMovementHandler *stockmovement.Handler
 	dashboardHandler     *dashboardHandler.Handler
+	productStockHandler  *productstock.Handler
 }
 
 func New(
@@ -30,7 +32,9 @@ func New(
 	warehouseHandler *warehouse.Handler,
 	productHandler *product.Handler,
 	stockMovementHandler *stockmovement.Handler,
-	dashboardHandler *dashboardHandler.Handler) *Router {
+	dashboardHandler *dashboardHandler.Handler,
+	productStockHandler *productstock.Handler,
+) *Router {
 
 	return &Router{
 		userHandler:          userHandler,
@@ -40,6 +44,7 @@ func New(
 		productHandler:       productHandler,
 		stockMovementHandler: stockMovementHandler,
 		dashboardHandler:     dashboardHandler,
+		productStockHandler:  productStockHandler,
 	}
 }
 
@@ -52,6 +57,7 @@ func (r *Router) RegisterRoutes() {
 	r.registerProductRoutes()
 	r.registerStockMovementRoutes()
 	r.registerDashboardRoutes()
+	r.registerProductStockRoutes()
 }
 
 func (r *Router) registerAuthRoutes() {
@@ -98,4 +104,8 @@ func (r *Router) registerStockMovementRoutes() {
 func (r *Router) registerDashboardRoutes() {
 	http.Handle("GET /api/v1/dashboard", auth.Middleware(http.HandlerFunc(r.dashboardHandler.HandleGetDashboardData)))
 	http.Handle("GET /api/v1/inventory/stats", auth.Middleware(http.HandlerFunc(r.dashboardHandler.HandleGetInventoryStats)))
+}
+
+func (r *Router) registerProductStockRoutes() {
+	http.Handle("GET /api/v1/inventory", auth.Middleware(http.HandlerFunc(r.productStockHandler.HandleGetInventoryList)))
 }

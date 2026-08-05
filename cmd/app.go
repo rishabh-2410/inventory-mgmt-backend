@@ -2,26 +2,37 @@ package main
 
 import (
 	conn "inventory-backend/src/db"
+
+	// handlers
 	businessHandler "inventory-backend/src/handlers/business"
 	categoryhandler "inventory-backend/src/handlers/category"
 	dashboardHandler "inventory-backend/src/handlers/dashaboard"
 	producthandler "inventory-backend/src/handlers/product"
+	productstockhandler "inventory-backend/src/handlers/product_stock"
 	stockmovementhandler "inventory-backend/src/handlers/stock_movement"
 	userhandler "inventory-backend/src/handlers/user"
 	warehouseHandler "inventory-backend/src/handlers/warehouse"
+
+	// repositories
 	businessRepo "inventory-backend/src/repository/business"
 	categoryRepo "inventory-backend/src/repository/categories"
 	dashboardRepo "inventory-backend/src/repository/dashboard"
 	productRepo "inventory-backend/src/repository/product"
+	productstockRepo "inventory-backend/src/repository/product_stock"
 	stockmovementRepo "inventory-backend/src/repository/stock_movement"
 	tokenRepo "inventory-backend/src/repository/token"
 	userRepo "inventory-backend/src/repository/user"
 	warehouseRepo "inventory-backend/src/repository/warehouse"
+
+	// router
 	router "inventory-backend/src/router"
+
+	// services
 	businessservice "inventory-backend/src/services/business"
 	categoryservice "inventory-backend/src/services/category"
 	dashboardservice "inventory-backend/src/services/dashboard"
 	productservice "inventory-backend/src/services/product"
+	productstockservice "inventory-backend/src/services/product_stock"
 	stockmovementservice "inventory-backend/src/services/stock_movement"
 	userservice "inventory-backend/src/services/user"
 
@@ -60,6 +71,7 @@ func main() {
 
 	slog.Info("database connection ready")
 
+	// Initialize repositories
 	userRepository := userRepo.NewUserRepo(db)
 	tokenRepository := tokenRepo.NewTokenRepo(db)
 	businessRepository := businessRepo.NewBusinessRepo(db)
@@ -68,8 +80,10 @@ func main() {
 	productRepository := productRepo.NewProductRepo(db)
 	stockMovementRepository := stockmovementRepo.NewStockMovementRepo(db)
 	dashboardRepository := dashboardRepo.NewDashboardRepo(db)
+	productStockRepository := productstockRepo.NewProductStockRepo(db)
 	slog.Info("repositories initialized")
 
+	// Initialize services
 	userservice := userservice.New(userRepository, tokenRepository)
 	businessservice := businessservice.New(businessRepository)
 	categoryservice := categoryservice.New(categoryRepository)
@@ -77,8 +91,10 @@ func main() {
 	productservice := productservice.New(productRepository)
 	stockmovementservice := stockmovementservice.New(stockMovementRepository)
 	dashboardservice := dashboardservice.New(dashboardRepository)
+	productStockService := productstockservice.New(productStockRepository)
 	slog.Info("services initialized")
 
+	// Initialize handlers
 	userHandler := userhandler.New(userservice)
 	slog.Info("handlers initialized")
 
@@ -100,7 +116,10 @@ func main() {
 	dashboardHandler := dashboardHandler.New(dashboardservice)
 	slog.Info("handlers initialized")
 
-	router := router.New(userHandler, businessHanlder, categoryHandler, warehouseHandler, productHandler, stockMovementHandler, dashboardHandler)
+	productStockHandler := productstockhandler.New(productStockService)
+	slog.Info("handlers initialized")
+
+	router := router.New(userHandler, businessHanlder, categoryHandler, warehouseHandler, productHandler, stockMovementHandler, dashboardHandler, productStockHandler)
 
 	router.RegisterRoutes()
 
