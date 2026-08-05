@@ -18,6 +18,7 @@ type StockMovementResponseDTO struct {
 }
 
 type StockMovementHistoryResponseDTO struct {
+	ID               uuid.UUID `json:"id"`
 	UserID           uuid.UUID `json:"user_id"`
 	ProductID        uuid.UUID `json:"product_id"`
 	MovementType     string    `json:"movement_type"`

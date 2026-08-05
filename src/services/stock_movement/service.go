@@ -53,6 +53,7 @@ func (s *Service) GetStockMovementHistory(businessID uuid.UUID, requestWithParam
 	stockMovementHistoryResponseDTOs := []*resmodels.StockMovementHistoryResponseDTO{}
 	for _, stockMovementHistory := range stockMovementsHistory {
 		stockMovementHistoryResponseDTOs = append(stockMovementHistoryResponseDTOs, &resmodels.StockMovementHistoryResponseDTO{
+			ID:               stockMovementHistory.ID,
 			UserID:           stockMovementHistory.UserID,
 			ProductID:        stockMovementHistory.ProductID,
 			MovementType:     stockMovementHistory.MovementType,

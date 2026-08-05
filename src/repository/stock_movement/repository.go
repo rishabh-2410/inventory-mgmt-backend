@@ -151,7 +151,7 @@ func (r *StockMovementRepo) GetStockMovementHistory(businessID uuid.UUID, reques
 	slog.Info("condition string", "conditionString", conditionString)
 
 	query := `
-		SELECT sm.user_id, sm.product_id, sm.movement_type, sm.movement_quantity, sm.reason, sm.created_at, p.name, p.sku, w.name
+		SELECT sm.id, sm.user_id, sm.product_id, sm.movement_type, sm.movement_quantity, sm.reason, sm.created_at, p.name, p.sku, w.name
 		FROM stock_movement sm 
 		JOIN products p ON sm.product_id = p.id
 		JOIN warehouses w ON sm.warehouse_id = w.id
@@ -170,6 +170,7 @@ func (r *StockMovementRepo) GetStockMovementHistory(businessID uuid.UUID, reques
 	for rows.Next() {
 		var stockMovementHistory dbmodels.StockMovementHistory
 		err = rows.Scan(
+			&stockMovementHistory.ID,
 			&stockMovementHistory.UserID,
 			&stockMovementHistory.ProductID,
 			&stockMovementHistory.MovementType,
@@ -197,7 +198,7 @@ func (r *StockMovementRepo) GetStockMovementHistory(businessID uuid.UUID, reques
 
 func (r *StockMovementRepo) GetStockMovementHistoryByWarehouse(businessID uuid.UUID, warehouseID uuid.UUID) ([]*dbmodels.StockMovementHistory, error) {
 	query := `
-		SELECT sm.user_id, sm.product_id, sm.movement_type, sm.movement_quantity, sm.reason, sm.created_at, p.name, p.sku, w.warehouse_name
+		SELECT sm.id, sm.user_id, sm.product_id, sm.movement_type, sm.movement_quantity, sm.reason, sm.created_at, p.name, p.sku, w.warehouse_name
 		FROM stock_movement sm 
 		JOIN products p ON sm.product_id = p.id
 		JOIN warehouses w ON sm.warehouse_id = w.id
@@ -212,6 +213,7 @@ func (r *StockMovementRepo) GetStockMovementHistoryByWarehouse(businessID uuid.U
 	for rows.Next() {
 		var stockMovementHistory dbmodels.StockMovementHistory
 		err = rows.Scan(
+			&stockMovementHistory.ID,
 			&stockMovementHistory.UserID,
 			&stockMovementHistory.ProductID,
 			&stockMovementHistory.MovementType,

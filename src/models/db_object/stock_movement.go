@@ -20,6 +20,7 @@ type StockMovement struct {
 }
 
 type StockMovementHistory struct {
+	ID               uuid.UUID
 	UserID           uuid.UUID
 	ProductID        uuid.UUID
 	MovementType     string
