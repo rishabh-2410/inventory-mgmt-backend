@@ -4,10 +4,12 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"fmt"
 	dbmodels "inventory-backend/src/models/db_object"
 	reqmodels "inventory-backend/src/models/req_dto"
 	"log/slog"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -72,20 +74,112 @@ func (r *StockMovementRepo) UpdateStockMovement(userID uuid.UUID, businessID uui
 	return currentStock, stockMovement, nil
 }
 
-func (r *StockMovementRepo) GetStockMovementHistory(businessID uuid.UUID) ([]*dbmodels.StockMovementHistory, error) {
+func (r *StockMovementRepo) GetStockMovementHistory(businessID uuid.UUID, requestWithParams *reqmodels.GetStockMovementHistoryRequestDTO, offset int) ([]*dbmodels.StockMovementHistory, error) {
+
+	args := []any{businessID}
+	argPos := 2
+	conditions := []string{
+		" sm.business_id = $1 ",
+	}
+	orderBy := " ORDER BY created_at DESC " // default
+	limit := ""                             // default
+
+	if requestWithParams.MovementType != nil {
+		conditions = append(conditions, fmt.Sprintf(" movement_type = $%d", argPos))
+		args = append(args, *requestWithParams.MovementType)
+		argPos++
+	}
+
+	if requestWithParams.WarehouseID != nil {
+		conditions = append(conditions, fmt.Sprintf(" warehouse_id = $%d", argPos))
+		args = append(args, *requestWithParams.WarehouseID)
+		argPos++
+	}
+
+	if requestWithParams.ProductID != nil {
+		conditions = append(conditions, fmt.Sprintf(" product_id = $%d", argPos))
+		args = append(args, *requestWithParams.ProductID)
+		argPos++
+	}
+
+	if requestWithParams.Search != nil {
+
+		conditions = append(conditions, fmt.Sprintf(`
+		(
+    		LOWER(p.name) LIKE LOWER($%d)
+    		OR LOWER(p.sku) LIKE LOWER($%d)
+		)
+			`, argPos, argPos))
+		args = append(args, "%"+*requestWithParams.Search+"%")
+		argPos++
+	}
+
+	if requestWithParams.From != nil {
+		conditions = append(conditions, fmt.Sprintf(" created_at >= $%d", argPos))
+		args = append(args, *requestWithParams.From)
+		argPos++
+	}
+
+	if requestWithParams.To != nil {
+		conditions = append(conditions, fmt.Sprintf(" created_at <= $%d", argPos))
+		args = append(args, *requestWithParams.To)
+		argPos++
+	}
+
+	if requestWithParams.SortBy != nil {
+		switch *requestWithParams.SortBy {
+		case "created_at_desc":
+			orderBy = " ORDER BY created_at ASC "
+		case "created_at_asc":
+			orderBy = " ORDER BY created_at DESC "
+		case "movement_quantity_desc":
+			orderBy = " ORDER BY movement_quantity DESC "
+		case "movement_quantity_asc":
+			orderBy = " ORDER BY movement_quantity ASC "
+		default:
+			orderBy = " ORDER BY created_at DESC "
+		}
+	}
+
+	if requestWithParams.Limit != nil {
+		limit = fmt.Sprintf(" LIMIT $%d OFFSET $%d ", argPos, argPos+1)
+		args = append(args, *requestWithParams.Limit, offset)
+		argPos += 2
+	}
+
+	conditionString := strings.Join(conditions, " AND ")
+	slog.Info("condition string", "conditionString", conditionString)
+
 	query := `
-		SELECT user_id, warehouse_id, product_id, movement_type, movement_quantity, reason, created_at FROM stock_movement
-		WHERE business_id = $1	
-	`
+		SELECT sm.user_id, sm.product_id, sm.movement_type, sm.movement_quantity, sm.reason, sm.created_at, p.name, p.sku, w.name
+		FROM stock_movement sm 
+		JOIN products p ON sm.product_id = p.id
+		JOIN warehouses w ON sm.warehouse_id = w.id
+		WHERE ` + strings.Join(conditions, " AND ") +
+		orderBy +
+		limit + ";"
+
+	slog.Debug("query", "query", query)
+
 	stockMovementsHistory := []*dbmodels.StockMovementHistory{}
-	rows, err := r.db.Query(query, businessID)
+	rows, err := r.db.Query(query, args...)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 	for rows.Next() {
 		var stockMovementHistory dbmodels.StockMovementHistory
-		err = rows.Scan(&stockMovementHistory.UserID, &stockMovementHistory.WarehouseID, &stockMovementHistory.ProductID, &stockMovementHistory.MovementType, &stockMovementHistory.MovementQuantity, &stockMovementHistory.Reason, &stockMovementHistory.CreatedAt)
+		err = rows.Scan(
+			&stockMovementHistory.UserID,
+			&stockMovementHistory.ProductID,
+			&stockMovementHistory.MovementType,
+			&stockMovementHistory.MovementQuantity,
+			&stockMovementHistory.Reason,
+			&stockMovementHistory.CreatedAt,
+			&stockMovementHistory.ProductName,
+			&stockMovementHistory.Sku,
+			&stockMovementHistory.WarehouseName,
+		)
 		if err != nil {
 			return nil, err
 		}
@@ -103,8 +197,11 @@ func (r *StockMovementRepo) GetStockMovementHistory(businessID uuid.UUID) ([]*db
 
 func (r *StockMovementRepo) GetStockMovementHistoryByWarehouse(businessID uuid.UUID, warehouseID uuid.UUID) ([]*dbmodels.StockMovementHistory, error) {
 	query := `
-		SELECT user_id, warehouse_id, product_id, movement_type, movement_quantity, reason, created_at FROM stock_movement
-		WHERE business_id = $1 AND warehouse_id = $2
+		SELECT sm.user_id, sm.product_id, sm.movement_type, sm.movement_quantity, sm.reason, sm.created_at, p.name, p.sku, w.warehouse_name
+		FROM stock_movement sm 
+		JOIN products p ON sm.product_id = p.id
+		JOIN warehouses w ON sm.warehouse_id = w.id
+		WHERE sm.business_id = $1 AND sm.warehouse_id = $2
 	`
 	stockMovementsHistory := []*dbmodels.StockMovementHistory{}
 	rows, err := r.db.Query(query, businessID, warehouseID)
@@ -114,7 +211,16 @@ func (r *StockMovementRepo) GetStockMovementHistoryByWarehouse(businessID uuid.U
 	defer rows.Close()
 	for rows.Next() {
 		var stockMovementHistory dbmodels.StockMovementHistory
-		err = rows.Scan(&stockMovementHistory.UserID, &stockMovementHistory.WarehouseID, &stockMovementHistory.ProductID, &stockMovementHistory.MovementType, &stockMovementHistory.MovementQuantity, &stockMovementHistory.Reason, &stockMovementHistory.CreatedAt)
+		err = rows.Scan(
+			&stockMovementHistory.UserID,
+			&stockMovementHistory.ProductID,
+			&stockMovementHistory.MovementType,
+			&stockMovementHistory.MovementQuantity,
+			&stockMovementHistory.Reason,
+			&stockMovementHistory.CreatedAt,
+			&stockMovementHistory.ProductName,
+			&stockMovementHistory.Sku,
+			&stockMovementHistory.WarehouseName)
 		if err != nil {
 			return nil, err
 		}

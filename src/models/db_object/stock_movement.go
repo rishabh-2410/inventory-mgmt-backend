@@ -21,10 +21,12 @@ type StockMovement struct {
 
 type StockMovementHistory struct {
 	UserID           uuid.UUID
-	WarehouseID      uuid.UUID
 	ProductID        uuid.UUID
 	MovementType     string
 	MovementQuantity float64
 	Reason           string
 	CreatedAt        time.Time
+	ProductName      string
+	Sku              string
+	WarehouseName    string
 }

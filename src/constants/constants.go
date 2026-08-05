@@ -1,0 +1,18 @@
+package constants
+
+const (
+	DEFAULT_LIMIT         = 10
+	DEFAULT_PAGE          = 1
+	DEFAULT_SORT_BY       = "created_at"
+	DEFAULT_ORDER_BY      = "desc"
+	DEFAULT_FROM          = "2026-01-01"
+	DEFAULT_TO            = "2026-12-31"
+	DEFAULT_MOVEMENT_TYPE = MOVEMENT_SALE
+	DEFAULT_SEARCH        = ""
+	DEFAULT_WAREHOUSE_ID  = ""
+	DEFAULT_PRODUCT_ID    = ""
+	MOVEMENT_SALE         = "SALE"
+	MOVEMENT_RETURN       = "RETURN"
+	MOVEMENT_DAMAGE       = "DAMAGE"
+	MOVEMENT_RECEIVE      = "RECEIVE"
+)

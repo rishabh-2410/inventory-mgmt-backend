@@ -34,8 +34,18 @@ func (s *Service) UpdateStockMovement(userID uuid.UUID, businessID uuid.UUID, st
 	}, nil
 }
 
-func (s *Service) GetStockMovementHistory(businessID uuid.UUID) ([]*resmodels.StockMovementHistoryResponseDTO, error) {
-	stockMovementsHistory, err := s.stockMovementRepo.GetStockMovementHistory(businessID)
+func (s *Service) GetStockMovementHistory(businessID uuid.UUID, requestWithParams *reqmodels.GetStockMovementHistoryRequestDTO) ([]*resmodels.StockMovementHistoryResponseDTO, error) {
+	err := s.validateRequestWithParams(requestWithParams)
+	if err != nil {
+		return nil, err
+	}
+
+	offset := 0
+	if requestWithParams.Page != nil && requestWithParams.Limit != nil {
+		offset = max((*requestWithParams.Page-1)*(*requestWithParams.Limit), 0)
+	}
+
+	stockMovementsHistory, err := s.stockMovementRepo.GetStockMovementHistory(businessID, requestWithParams, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -44,14 +54,57 @@ func (s *Service) GetStockMovementHistory(businessID uuid.UUID) ([]*resmodels.St
 	for _, stockMovementHistory := range stockMovementsHistory {
 		stockMovementHistoryResponseDTOs = append(stockMovementHistoryResponseDTOs, &resmodels.StockMovementHistoryResponseDTO{
 			UserID:           stockMovementHistory.UserID,
-			WarehouseID:      stockMovementHistory.WarehouseID,
 			ProductID:        stockMovementHistory.ProductID,
 			MovementType:     stockMovementHistory.MovementType,
 			MovementQuantity: stockMovementHistory.MovementQuantity,
 			Reason:           stockMovementHistory.Reason,
 			CreatedAt:        stockMovementHistory.CreatedAt,
+			ProductName:      stockMovementHistory.ProductName,
+			Sku:              stockMovementHistory.Sku,
+			WarehouseName:    stockMovementHistory.WarehouseName,
 		})
 	}
 
 	return stockMovementHistoryResponseDTOs, nil
+}
+
+func (s *Service) validateRequestWithParams(requestWithParams *reqmodels.GetStockMovementHistoryRequestDTO) error {
+	limit, err := ValidateLimit(requestWithParams.Limit)
+	if err != nil {
+		return err
+	}
+	requestWithParams.Limit = limit
+
+	page, err := ValidatePage(requestWithParams.Page)
+	if err != nil {
+		return err
+	}
+	requestWithParams.Page = page
+
+	sortBy, err := ValidateSortBy(requestWithParams.SortBy)
+	if err != nil {
+		return err
+	}
+	requestWithParams.SortBy = sortBy
+
+	from, to, err := ValidateTimeRange(requestWithParams.From, requestWithParams.To)
+	if err != nil {
+		return err
+	}
+	requestWithParams.From = from
+	requestWithParams.To = to
+
+	movementType, err := ValidateMovementType(requestWithParams.MovementType)
+	if err != nil {
+		return err
+	}
+	requestWithParams.MovementType = movementType
+
+	searchParam, err := ValidateSearchParam(requestWithParams.Search)
+	if err != nil {
+		return err
+	}
+	requestWithParams.Search = searchParam
+
+	return nil
 }

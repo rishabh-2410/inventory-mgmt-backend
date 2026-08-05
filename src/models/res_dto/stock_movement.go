@@ -18,11 +18,13 @@ type StockMovementResponseDTO struct {
 }
 
 type StockMovementHistoryResponseDTO struct {
-	UserID           uuid.UUID
-	WarehouseID      uuid.UUID
-	ProductID        uuid.UUID
-	MovementType     string
-	MovementQuantity float64
-	Reason           string
-	CreatedAt        time.Time
+	UserID           uuid.UUID `json:"user_id"`
+	ProductID        uuid.UUID `json:"product_id"`
+	MovementType     string    `json:"movement_type"`
+	MovementQuantity float64   `json:"movement_quantity"`
+	Reason           string    `json:"reason"`
+	CreatedAt        time.Time `json:"created_at"`
+	ProductName      string    `json:"product_name"`
+	Sku              string    `json:"sku"`
+	WarehouseName    string    `json:"warehouse_name"`
 }

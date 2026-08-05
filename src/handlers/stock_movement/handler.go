@@ -2,12 +2,15 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	reqmodels "inventory-backend/src/models/req_dto"
 	"inventory-backend/src/requestcontext"
 	stockmovementservice "inventory-backend/src/services/stock_movement"
 	"inventory-backend/src/validation"
 	"log/slog"
 	"net/http"
+	"strconv"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -95,7 +98,14 @@ func (h *Handler) HandleGetStockMovementHistory(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	response, err := h.stockMovementService.GetStockMovementHistory(businessID)
+	requestWithParams, err := h.checkOptionalQueryParams(r)
+	if err != nil {
+		slog.Error("invalid query params", "endpoint", r.URL.Path, "error", err)
+		http.Error(w, "Invalid query params", http.StatusBadRequest)
+		return
+	}
+
+	response, err := h.stockMovementService.GetStockMovementHistory(businessID, requestWithParams)
 	if err != nil {
 		slog.Error("get stock movement history failed", "endpoint", r.URL.Path, "error", err)
 		http.Error(w, "Unable to get stock movement history", http.StatusInternalServerError)
@@ -110,4 +120,80 @@ func (h *Handler) HandleGetStockMovementHistory(w http.ResponseWriter, r *http.R
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
+}
+
+func (h *Handler) checkOptionalQueryParams(r *http.Request) (*reqmodels.GetStockMovementHistoryRequestDTO, error) {
+	var request = &reqmodels.GetStockMovementHistoryRequestDTO{}
+	queryParams := r.URL.Query()
+
+	limit := queryParams.Get("limit")
+	if limit != "" {
+		limitInt, err := strconv.Atoi(limit)
+		if err != nil {
+			return nil, errors.New("invalid limit")
+		}
+		request.Limit = &limitInt
+	}
+
+	page := queryParams.Get("page")
+	if page != "" {
+		pageInt, err := strconv.Atoi(page)
+		if err != nil {
+			return nil, errors.New("invalid page")
+		}
+		request.Page = &pageInt
+	}
+
+	movementType := queryParams.Get("movement_type")
+	if movementType != "" {
+		request.MovementType = &movementType
+	}
+
+	warehouseID := queryParams.Get("warehouse_id")
+	if warehouseID != "" {
+		warehouseIDUUID, err := uuid.Parse(warehouseID)
+		if err != nil {
+			return nil, errors.New("invalid warehouse ID")
+		}
+		request.WarehouseID = &warehouseIDUUID
+	}
+
+	productID := queryParams.Get("product_id")
+	if productID != "" {
+		productIDUUID, err := uuid.Parse(productID)
+		if err != nil {
+			return nil, errors.New("invalid product ID")
+		}
+		request.ProductID = &productIDUUID
+	}
+
+	search := queryParams.Get("search")
+	if search != "" {
+		request.Search = &search
+	}
+
+	from := queryParams.Get("from")
+	if from != "" {
+		fromTime, err := time.Parse(time.DateOnly, from)
+		if err != nil {
+			return nil, errors.New("invalid from time")
+		}
+		request.From = &fromTime
+	}
+
+	to := queryParams.Get("to")
+	if to != "" {
+		toTime, err := time.Parse(time.DateOnly, to)
+		if err != nil {
+			return nil, errors.New("invalid to time")
+		}
+		request.To = &toTime
+	}
+
+	sortBy := queryParams.Get("sort_by")
+	if sortBy != "" {
+		request.SortBy = &sortBy
+	}
+
+	return request, nil
 }
