@@ -7,14 +7,14 @@ import (
 )
 
 type StockMovementResponseDTO struct {
-	ProductStockID   uuid.UUID
-	ProductID        uuid.UUID
-	WarehouseID      uuid.UUID
-	CurrentStock     float64
-	MovementType     string
-	MovementQuantity float64
-	Reason           string
-	CreatedAt        time.Time
+	ProductStockID   uuid.UUID `json:"product_stock_id"`
+	ProductID        uuid.UUID `json:"product_id"`
+	WarehouseID      uuid.UUID `json:"warehouse_id"`
+	CurrentStock     float64   `json:"current_stock"`
+	MovementType     string    `json:"movement_type"`
+	MovementQuantity float64   `json:"movement_quantity"`
+	Reason           string    `json:"reason"`
+	CreatedAt        time.Time `json:"created_at"`
 }
 
 type StockMovementHistoryResponseDTO struct {
