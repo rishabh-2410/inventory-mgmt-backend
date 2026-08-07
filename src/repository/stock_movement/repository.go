@@ -143,7 +143,7 @@ func (r *StockMovementRepo) GetStockMovementHistory(businessID uuid.UUID, reques
 
 	if requestWithParams.Limit != nil {
 		limit = fmt.Sprintf(" LIMIT $%d OFFSET $%d ", argPos, argPos+1)
-		args = append(args, *requestWithParams.Limit, offset)
+		args = append(args, *requestWithParams.Limit+1, offset)
 		argPos += 2
 	}
 

@@ -34,15 +34,18 @@ func (s *Service) UpdateStockMovement(userID uuid.UUID, businessID uuid.UUID, st
 	}, nil
 }
 
-func (s *Service) GetStockMovementHistory(businessID uuid.UUID, requestWithParams *reqmodels.GetStockMovementHistoryRequestDTO) ([]*resmodels.StockMovementHistoryResponseDTO, error) {
+func (s *Service) GetStockMovementHistory(businessID uuid.UUID, requestWithParams *reqmodels.GetStockMovementHistoryRequestDTO) (*resmodels.StockMovementHistoryResponseDTO, error) {
 	err := s.validateRequestWithParams(requestWithParams)
 	if err != nil {
 		return nil, err
 	}
 
+	stockMovementHistoryResponseDTOs := &resmodels.StockMovementHistoryResponseDTO{}
 	offset := 0
 	if requestWithParams.Page != nil && requestWithParams.Limit != nil {
 		offset = max((*requestWithParams.Page-1)*(*requestWithParams.Limit), 0)
+		stockMovementHistoryResponseDTOs.Page = *requestWithParams.Page
+		stockMovementHistoryResponseDTOs.Limit = *requestWithParams.Limit
 	}
 
 	stockMovementsHistory, err := s.stockMovementRepo.GetStockMovementHistory(businessID, requestWithParams, offset)
@@ -50,9 +53,8 @@ func (s *Service) GetStockMovementHistory(businessID uuid.UUID, requestWithParam
 		return nil, err
 	}
 
-	stockMovementHistoryResponseDTOs := []*resmodels.StockMovementHistoryResponseDTO{}
 	for _, stockMovementHistory := range stockMovementsHistory {
-		stockMovementHistoryResponseDTOs = append(stockMovementHistoryResponseDTOs, &resmodels.StockMovementHistoryResponseDTO{
+		stockMovementHistoryResponseDTOs.Data = append(stockMovementHistoryResponseDTOs.Data, &resmodels.StockMovementHistory{
 			ID:               stockMovementHistory.ID,
 			UserID:           stockMovementHistory.UserID,
 			ProductID:        stockMovementHistory.ProductID,
@@ -64,6 +66,12 @@ func (s *Service) GetStockMovementHistory(businessID uuid.UUID, requestWithParam
 			Sku:              stockMovementHistory.Sku,
 			WarehouseName:    stockMovementHistory.WarehouseName,
 		})
+	}
+	stockMovementHistoryResponseDTOs.Total = len(stockMovementsHistory)
+	stockMovementHistoryResponseDTOs.HasNext = stockMovementHistoryResponseDTOs.Limit < stockMovementHistoryResponseDTOs.Total
+
+	if stockMovementHistoryResponseDTOs.HasNext {
+		stockMovementHistoryResponseDTOs.Data = stockMovementHistoryResponseDTOs.Data[:stockMovementHistoryResponseDTOs.Limit]
 	}
 
 	return stockMovementHistoryResponseDTOs, nil

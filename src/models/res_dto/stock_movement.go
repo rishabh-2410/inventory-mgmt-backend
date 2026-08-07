@@ -17,7 +17,7 @@ type StockMovementResponseDTO struct {
 	CreatedAt        time.Time `json:"created_at"`
 }
 
-type StockMovementHistoryResponseDTO struct {
+type StockMovementHistory struct {
 	ID               uuid.UUID `json:"id"`
 	UserID           uuid.UUID `json:"user_id"`
 	ProductID        uuid.UUID `json:"product_id"`
@@ -28,4 +28,12 @@ type StockMovementHistoryResponseDTO struct {
 	ProductName      string    `json:"product_name"`
 	Sku              string    `json:"sku"`
 	WarehouseName    string    `json:"warehouse_name"`
+}
+
+type StockMovementHistoryResponseDTO struct {
+	Data    []*StockMovementHistory `json:"data"`
+	Total   int                     `json:"total"`
+	Page    int                     `json:"page"`
+	Limit   int                     `json:"limit"`
+	HasNext bool                    `json:"has_next"`
 }
