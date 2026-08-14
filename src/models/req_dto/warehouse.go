@@ -6,6 +6,6 @@ type AddWarehouseRequestDTO struct {
 }
 
 type EditWarehouseRequestDTO struct {
-	Name    *string `json:"name" validate:"omitempty,gt=0"`
-	Address *string `json:"address" validate:"omitempty,gt=0"`
+	Name    *string `json:"name" validate:"omitempty"`
+	Address *string `json:"address" validate:"omitempty"`
 }
