@@ -94,6 +94,37 @@ func (ur *UserRepo) AddUser(user *dbmodel.User) (uuid.UUID, error) {
 
 }
 
+func (ur *UserRepo) AddEmployee(employee *dbmodel.User) (*dbmodel.User, error) {
+	newEmployee := &dbmodel.User{}
+	slog.Debug("adding employee...", "email", employee.Email, "name", employee.Name)
+	err := ur.db.QueryRow(`INSERT INTO users(
+		name,
+		email,
+		business_id,
+		password_hash,
+		role,
+		is_active
+	) VALUES ($1,$2,$3,$4,$5,$6)
+	RETURNING id, name, email, business_id, password_hash, role, is_active, created_at, updated_at
+	`, employee.Name, employee.Email, employee.BusinessID, employee.PasswordHash, employee.Role, employee.IsActive).Scan(
+		&newEmployee.ID,
+		&newEmployee.Name,
+		&newEmployee.Email,
+		&newEmployee.BusinessID,
+		&newEmployee.PasswordHash,
+		&newEmployee.Role,
+		&newEmployee.IsActive,
+		&newEmployee.CreatedAt,
+		&newEmployee.UpdatedAt,
+	)
+	if err != nil {
+		slog.Error("failed to add new employee", "email", employee.Email, "err", err)
+		return nil, err
+	}
+
+	return newEmployee, nil
+}
+
 func (ur *UserRepo) RevokeUser(hashedToken string) error {
 	slog.Debug("user repository revoke user", "hashed_refresh_token", hashedToken)
 

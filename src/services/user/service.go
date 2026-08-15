@@ -11,6 +11,7 @@ import (
 	userrepo "inventory-backend/src/repository/user"
 	"log/slog"
 
+	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -70,6 +71,58 @@ func (us *Service) RegisterUser(req *reqmodels.RegisterUserRequestDTO) (*resmode
 
 	return &resmodels.RegisterUserResponseDTO{
 		ID: userID,
+	}, nil
+
+}
+
+func (us *Service) CreateUser(businessID uuid.UUID, req *reqmodels.RegisterUserRequestDTO) (*resmodels.CreateUserResponseDTO, error) {
+	slog.Debug("creating employee...", "email", req.Email, "name", req.Name)
+
+	existingUser, err := us.userRepo.FindByEmail(req.Email)
+	if err != nil && err.Error() != "sql: no rows in result set" {
+		slog.Error("Unable to check db for existing user ", req.Email, err)
+		return nil, err
+	}
+
+	if existingUser != nil {
+		slog.Info("employee email already exists ", "email", req.Email)
+		return nil, errors.New("employee already exists")
+	}
+
+	hashBytes, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	if err != nil {
+		slog.Error("failed to hash passwd", "email", req.Email, "err", err)
+		return nil, err
+	}
+
+	isActive := true
+	role := enum.RoleEmployee
+	newUser := &dbmodel.User{
+		Email:        req.Email,
+		Name:         req.Name,
+		BusinessID:   &businessID,
+		PasswordHash: string(hashBytes),
+		Role:         &role,
+		IsActive:     isActive,
+	}
+
+	employee, err := us.userRepo.AddEmployee(newUser)
+	if err != nil {
+		slog.Error("failed to add employee", "email", req.Email, "err", err)
+		return nil, err
+	}
+
+	slog.Info("employee created successfully", "email", req.Email)
+
+	return &resmodels.CreateUserResponseDTO{
+		ID:         employee.ID,
+		Email:      employee.Email,
+		Name:       employee.Name,
+		BusinessID: employee.BusinessID,
+		Role:       employee.Role,
+		IsActive:   employee.IsActive,
+		CreatedAt:  employee.CreatedAt,
+		UpdatedAt:  employee.UpdatedAt,
 	}, nil
 
 }

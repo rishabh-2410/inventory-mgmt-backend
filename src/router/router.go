@@ -65,6 +65,8 @@ func (r *Router) registerAuthRoutes() {
 	http.HandleFunc("POST /api/v1/auth/login", r.userHandler.HandleUserLogin)
 	http.HandleFunc("POST /api/v1/auth/logout", r.userHandler.HandleUserLogout)
 	http.HandleFunc("POST /api/v1/auth/refresh", r.userHandler.HandleTokenRefresh)
+	// http.HandleFunc("POST /api/v1/auth/forgot-password", r.userHandler.HandleForgotPassword)
+	http.Handle("POST /api/v1/auth/employee", auth.Middleware(http.HandlerFunc(r.userHandler.HandleCreateUser)))
 }
 
 func (r *Router) registerBusinessRoutes() {

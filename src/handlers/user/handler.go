@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	reqmodels "inventory-backend/src/models/req_dto"
+	"inventory-backend/src/requestcontext"
 	user "inventory-backend/src/services/user"
 	"inventory-backend/src/validation"
 	"log/slog"
@@ -19,8 +20,7 @@ func New(userService *user.Service) *Handler {
 	}
 }
 
-func (userHandler *Handler) HandleRegisterUser(w http.ResponseWriter,
-	r *http.Request) {
+func (userHandler *Handler) HandleRegisterUser(w http.ResponseWriter, r *http.Request) {
 
 	var request reqmodels.RegisterUserRequestDTO
 
@@ -152,6 +152,53 @@ func (userHandler *Handler) HandleTokenRefresh(w http.ResponseWriter, r *http.Re
 
 	if err = json.NewEncoder(w).Encode(response); err != nil {
 		slog.Error("refresh response encode failed path=%s user_id=%s err=%v", r.URL.Path, response.ID, err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+}
+
+func (userHandler *Handler) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
+	var request reqmodels.RegisterUserRequestDTO
+
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+	err := decoder.Decode(&request)
+	if err != nil {
+		slog.Error("create user request decode failed path=%s err=%v", r.URL.Path, err)
+		http.Error(w, "Invalid Request", http.StatusBadRequest)
+	}
+
+	err = validation.Validate.Struct(request)
+	if err != nil {
+		slog.Error("create user request validation failed path=%s err=%v", r.URL.Path, err)
+		http.Error(w, "Invalid Request", http.StatusBadRequest)
+		return
+	}
+
+	_, ok := requestcontext.GetUserID(r.Context())
+	if !ok {
+		slog.Error("missing user id", "path", r.URL.Path)
+		http.Error(w, "User is not authorized to create user", http.StatusUnauthorized)
+		return
+	}
+
+	businessID, ok := requestcontext.GetBusinessID(r.Context())
+	if !ok {
+		slog.Error("missing business id", "path", r.URL.Path)
+		http.Error(w, "Business is not authorized to create user", http.StatusUnauthorized)
+		return
+	}
+
+	response, err := userHandler.userService.CreateUser(businessID, &request)
+	if err != nil {
+		slog.Error("create user request failed", "path", r.URL.Path, "err", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	if err = json.NewEncoder(w).Encode(response); err != nil {
+		slog.Error("create user response encode failed", "path", r.URL.Path, "err", err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
