@@ -157,6 +157,7 @@ func (userHandler *Handler) HandleTokenRefresh(w http.ResponseWriter, r *http.Re
 	}
 }
 
+// CreateUser is a handler for creating a new user
 func (userHandler *Handler) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 	var request reqmodels.RegisterUserRequestDTO
 
@@ -199,6 +200,54 @@ func (userHandler *Handler) HandleCreateUser(w http.ResponseWriter, r *http.Requ
 	w.WriteHeader(http.StatusOK)
 	if err = json.NewEncoder(w).Encode(response); err != nil {
 		slog.Error("create user response encode failed", "path", r.URL.Path, "err", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+}
+
+// DeleteUser is a handler for deleting a user
+func (userHandler *Handler) HandleDeleteUser(w http.ResponseWriter, r *http.Request) {
+	employeeID := r.PathValue("id")
+	if employeeID == "" {
+		slog.Error("missing employee id", "path", r.URL.Path)
+		http.Error(w, "Invalid Request", http.StatusBadRequest)
+		return
+	}
+	err := userHandler.userService.DeleteUser(employeeID)
+	if err != nil {
+		slog.Error("delete user request failed", "path", r.URL.Path, "err", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func (userHandler *Handler) HandleGetUsers(w http.ResponseWriter, r *http.Request) {
+	_, ok := requestcontext.GetUserID(r.Context())
+	if !ok {
+		slog.Error("missing user id", "path", r.URL.Path)
+		http.Error(w, "User is not authorized to get users", http.StatusUnauthorized)
+		return
+	}
+
+	businessID, ok := requestcontext.GetBusinessID(r.Context())
+	if !ok {
+		slog.Error("missing business id", "path", r.URL.Path)
+		http.Error(w, "Business is not authorized to get users", http.StatusUnauthorized)
+		return
+	}
+
+	users, err := userHandler.userService.GetUsers(businessID)
+	if err != nil {
+		slog.Error("get users request failed", "path", r.URL.Path, "err", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	if err = json.NewEncoder(w).Encode(users); err != nil {
+		slog.Error("get users response encode failed", "path", r.URL.Path, "err", err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}

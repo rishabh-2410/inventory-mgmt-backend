@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	dbmodel "inventory-backend/src/models/db_object"
+	enum "inventory-backend/src/models/enums"
 
 	"log/slog"
 
@@ -94,6 +95,37 @@ func (ur *UserRepo) AddUser(user *dbmodel.User) (uuid.UUID, error) {
 
 }
 
+func (ur *UserRepo) RevokeUser(hashedToken string) error {
+	slog.Debug("user repository revoke user", "hashed_refresh_token", hashedToken)
+
+	result, err := ur.db.Exec(
+		`UPDATE refresh_tokens
+			SET revoked_at = NOW()
+		WHERE token_hash = $1 
+			AND revoked_at IS NULL 
+			AND expires_at > NOW()
+		`, hashedToken)
+	if err != nil {
+		slog.Error("user repository revoke user exec failed err=%v", err)
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		slog.Error("user repository revoke user rows failed err=%v", err)
+		return err
+	}
+
+	if rowsAffected == 0 {
+		slog.Error("user repository revoke user no rows affected")
+		return errors.New("refresh token not found or already revoked")
+	}
+
+	slog.Info("user repository revoke user success")
+
+	return nil
+}
+
 func (ur *UserRepo) AddEmployee(employee *dbmodel.User) (*dbmodel.User, error) {
 	newEmployee := &dbmodel.User{}
 	slog.Debug("adding employee...", "email", employee.Email, "name", employee.Name)
@@ -125,33 +157,54 @@ func (ur *UserRepo) AddEmployee(employee *dbmodel.User) (*dbmodel.User, error) {
 	return newEmployee, nil
 }
 
-func (ur *UserRepo) RevokeUser(hashedToken string) error {
-	slog.Debug("user repository revoke user", "hashed_refresh_token", hashedToken)
+func (ur *UserRepo) DeleteUser(employeeID string) error {
+	slog.Debug("deleting employee...", "employee_id", employeeID)
 
-	result, err := ur.db.Exec(
-		`UPDATE refresh_tokens
-			SET revoked_at = NOW()
-		WHERE token_hash = $1 
-			AND revoked_at IS NULL 
-			AND expires_at > NOW()
-		`, hashedToken)
+	_, err := ur.db.Exec(`UPDATE users SET is_active = false WHERE id=$1`, employeeID)
 	if err != nil {
-		slog.Error("user repository revoke user exec failed err=%v", err)
+		slog.Error("failed to deactivate employee", "employee_id", employeeID, "err", err)
 		return err
 	}
 
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		slog.Error("user repository revoke user rows failed err=%v", err)
-		return err
-	}
-
-	if rowsAffected == 0 {
-		slog.Error("user repository revoke user no rows affected")
-		return errors.New("refresh token not found or already revoked")
-	}
-
-	slog.Info("user repository revoke user success")
+	slog.Info("employee deactivated successfully", "employee_id", employeeID)
 
 	return nil
+}
+
+func (ur *UserRepo) FindByBusinessIDAndRole(businessID uuid.UUID, role enum.UserRole) ([]dbmodel.User, error) {
+	slog.Debug("finding users by business id and role", "business_id", businessID, "role", role)
+
+	rows, err := ur.db.Query(`
+		SELECT id, name, email, business_id, password_hash, role, is_active, created_at, updated_at
+		FROM users 
+		WHERE business_id=$1 AND role=$2
+	`, businessID, role)
+
+	if err != nil {
+		slog.Error("failed to find users by business id and role", "business_id", businessID, "role", role, "err", err)
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	usersList := make([]dbmodel.User, 0)
+
+	for rows.Next() {
+		var user dbmodel.User
+		err := rows.Scan(&user.ID, &user.Name, &user.Email, &user.BusinessID, &user.PasswordHash, &user.Role, &user.IsActive, &user.CreatedAt, &user.UpdatedAt)
+		if err != nil {
+			slog.Error("failed to scan user", "err", err)
+			return nil, err
+		}
+		usersList = append(usersList, user)
+	}
+
+	if err := rows.Err(); err != nil {
+		slog.Error("failed to fetch users", "error", err)
+		return nil, err
+	}
+
+	slog.Debug("users found by business id and role", "business_id", businessID, "role", role)
+
+	return usersList, nil
 }

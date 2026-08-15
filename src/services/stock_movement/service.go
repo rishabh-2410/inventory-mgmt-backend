@@ -40,7 +40,13 @@ func (s *Service) GetStockMovementHistory(businessID uuid.UUID, requestWithParam
 		return nil, err
 	}
 
-	stockMovementHistoryResponseDTOs := &resmodels.StockMovementHistoryResponseDTO{}
+	stockMovementHistoryResponseDTOs := &resmodels.StockMovementHistoryResponseDTO{
+		Data:    []*resmodels.StockMovementHistory{},
+		Total:   0,
+		Page:    1,
+		Limit:   2,
+		HasNext: false,
+	}
 	offset := 0
 	if requestWithParams.Page != nil && requestWithParams.Limit != nil {
 		offset = max((*requestWithParams.Page-1)*(*requestWithParams.Limit), 0)
