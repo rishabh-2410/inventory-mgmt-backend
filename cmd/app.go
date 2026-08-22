@@ -96,27 +96,29 @@ func main() {
 
 	// Initialize handlers
 	userHandler := userhandler.New(userservice)
-	slog.Info("handlers initialized")
+	slog.Debug("auth handlers initialized")
 
 	businessHanlder := businessHandler.New(businessservice)
-	slog.Info("handlers initialized")
+	slog.Debug("business handlers initialized")
 
 	categoryHandler := categoryhandler.New(categoryservice)
-	slog.Info("handlers initialized")
+	slog.Debug("category handlers initialized")
 
 	warehouseHandler := warehouseHandler.New(warehouseservice)
-	slog.Info("handlers initialized")
+	slog.Debug("warehouse handlers initialized")
 
 	productHandler := producthandler.New(productservice)
-	slog.Info("handlers initialized")
+	slog.Debug("product handlers initialized")
 
 	stockMovementHandler := stockmovementhandler.New(stockmovementservice)
-	slog.Info("handlers initialized")
+	slog.Debug("stock movement handlers initialized")
 
 	dashboardHandler := dashboardHandler.New(dashboardservice)
-	slog.Info("handlers initialized")
+	slog.Debug("dashboard handlers initialized")
 
 	productStockHandler := productstockhandler.New(productStockService)
+	slog.Debug("product stock handlers initialized")
+
 	slog.Info("handlers initialized")
 
 	router := router.New(userHandler, businessHanlder, categoryHandler, warehouseHandler, productHandler, stockMovementHandler, dashboardHandler, productStockHandler)
