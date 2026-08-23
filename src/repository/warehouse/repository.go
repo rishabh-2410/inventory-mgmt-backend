@@ -57,7 +57,8 @@ func (wr *WarehouseRepo) GetWarehouses(businessID uuid.UUID) ([]dbmodel.Warehous
 	result := make([]dbmodel.Warehouse, 0)
 
 	rows, err := wr.db.Query(
-		`SELECT * FROM warehouses
+		`SELECT id, business_id, name, address, created_at, updated_at 
+		FROM warehouses
 		WHERE business_id=$1	
 		`, businessID)
 
