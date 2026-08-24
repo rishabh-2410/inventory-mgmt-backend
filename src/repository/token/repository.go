@@ -66,6 +66,10 @@ func (tr *TokenRepo) MarkTokenExpired(refreshToken string) (uuid.UUID, error) {
 		`, refreshToken).Scan(&userID)
 
 	if err != nil {
+		if err == sql.ErrNoRows {
+			slog.Error("token repository mark token expired not found", "refresh_token", refreshToken)
+			return uuid.UUID{}, errors.New("refresh token not found")
+		}
 		slog.Error("token repository mark token expired failed", "err", err)
 		return uuid.UUID{}, err
 	}

@@ -142,6 +142,11 @@ func (userHandler *Handler) HandleTokenRefresh(w http.ResponseWriter, r *http.Re
 
 	response, err := userHandler.userService.RefreshToken(request.RefreshToken)
 	if err != nil {
+		if err.Error() == "refresh token not found" {
+			slog.Error("refresh token not found", "path", r.URL.Path)
+			http.Error(w, "Refresh Token Not Found", http.StatusUnauthorized)
+			return
+		}
 		slog.Error("refresh request failed path=%s err=%v", r.URL.Path, err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
