@@ -2,12 +2,15 @@ package handlers
 
 import (
 	"encoding/json"
+	enums "inventory-backend/src/models/enums"
 	reqmodels "inventory-backend/src/models/req_dto"
 	"inventory-backend/src/requestcontext"
 	user "inventory-backend/src/services/user"
 	"inventory-backend/src/validation"
 	"log/slog"
 	"net/http"
+
+	"github.com/google/uuid"
 )
 
 type Handler struct {
@@ -212,13 +215,31 @@ func (userHandler *Handler) HandleCreateUser(w http.ResponseWriter, r *http.Requ
 
 // DeleteUser is a handler for deleting a user
 func (userHandler *Handler) HandleDeleteUser(w http.ResponseWriter, r *http.Request) {
-	employeeID := r.PathValue("id")
-	if employeeID == "" {
-		slog.Error("missing employee id", "path", r.URL.Path)
-		http.Error(w, "Invalid Request", http.StatusBadRequest)
+	var businessID uuid.UUID
+	userID, ok := requestcontext.GetUserID(r.Context())
+	if !ok {
+		slog.Error("missing user id", "path", r.URL.Path)
+		http.Error(w, "User is not authorized to delete user", http.StatusUnauthorized)
 		return
 	}
-	err := userHandler.userService.DeleteUser(employeeID)
+
+	role, ok := requestcontext.GetUserRole(r.Context())
+	if !ok {
+		slog.Error("missing role", "path", r.URL.Path)
+		http.Error(w, "User is not authorized to delete user", http.StatusUnauthorized)
+		return
+	}
+
+	if role == enums.RoleOwner {
+		businessID, ok = requestcontext.GetBusinessID(r.Context())
+		if !ok {
+			slog.Error("missing business id", "path", r.URL.Path)
+			http.Error(w, "Business is not authorized to delete user", http.StatusUnauthorized)
+			return
+		}
+	}
+
+	err := userHandler.userService.DeleteUser(userID, businessID, role)
 	if err != nil {
 		slog.Error("delete user request failed", "path", r.URL.Path, "err", err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)

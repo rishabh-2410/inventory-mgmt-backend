@@ -157,27 +157,13 @@ func (ur *UserRepo) AddEmployee(employee *dbmodel.User) (*dbmodel.User, error) {
 	return newEmployee, nil
 }
 
-func (ur *UserRepo) DeleteUser(employeeID string) error {
-	slog.Debug("deleting employee...", "employee_id", employeeID)
-
-	_, err := ur.db.Exec(`UPDATE users SET is_active = false WHERE id=$1`, employeeID)
-	if err != nil {
-		slog.Error("failed to deactivate employee", "employee_id", employeeID, "err", err)
-		return err
-	}
-
-	slog.Info("employee deactivated successfully", "employee_id", employeeID)
-
-	return nil
-}
-
 func (ur *UserRepo) FindByBusinessIDAndRole(businessID uuid.UUID, role enum.UserRole) ([]dbmodel.User, error) {
 	slog.Debug("finding users by business id and role", "business_id", businessID, "role", role)
 
 	rows, err := ur.db.Query(`
-		SELECT id, name, email, business_id, password_hash, role, is_active, created_at, updated_at
-		FROM users 
-		WHERE business_id=$1 AND role=$2
+	SELECT id, name, email, business_id, password_hash, role, is_active, created_at, updated_at
+	FROM users 
+	WHERE business_id=$1 AND role=$2
 	`, businessID, role)
 
 	if err != nil {
@@ -207,4 +193,46 @@ func (ur *UserRepo) FindByBusinessIDAndRole(businessID uuid.UUID, role enum.User
 	slog.Debug("users found by business id and role", "business_id", businessID, "role", role)
 
 	return usersList, nil
+}
+
+func (ur *UserRepo) DeleteOwnerAndBusiness(businessID uuid.UUID) error {
+	slog.Debug("deleting owner and business...", "business_id", businessID)
+
+	tx, err := ur.db.Begin()
+	if err != nil {
+		slog.Error("failed to begin transaction", "err", err)
+		return err
+	}
+	defer tx.Rollback()
+
+	deleteBusinessQuery := `DELETE FROM businesses WHERE id=$1`
+	_, err = tx.Exec(deleteBusinessQuery, businessID)
+	if err != nil {
+		slog.Error("failed to delete business", "business_id", businessID, "err", err)
+		return err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		slog.Error("failed to commit transaction", "err", err)
+		return err
+	}
+
+	slog.Info("owner and business deleted successfully", "business_id", businessID)
+
+	return nil
+}
+
+func (ur *UserRepo) DeleteEmployee(employeeID string) error {
+	slog.Debug("deleting employee...", "employee_id", employeeID)
+
+	_, err := ur.db.Exec(`UPDATE users SET is_active = false WHERE id=$1`, employeeID)
+	if err != nil {
+		slog.Error("failed to deactivate employee", "employee_id", employeeID, "err", err)
+		return err
+	}
+
+	slog.Info("employee deactivated successfully", "employee_id", employeeID)
+
+	return nil
 }
