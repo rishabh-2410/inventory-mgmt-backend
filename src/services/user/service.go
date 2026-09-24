@@ -262,25 +262,26 @@ func (us *Service) CreateUser(businessID uuid.UUID, req *reqmodels.RegisterUserR
 func (us *Service) DeleteUser(employeeID string, businessID uuid.UUID, role enum.UserRole) error {
 	slog.Debug("deactivating employee...", "employee_id", employeeID)
 
-	if role != enum.RoleEmployee {
-		slog.Warn("user is an owner, deleting user will result in business deletion", "role", role)
-		err := us.userRepo.DeleteOwnerAndBusiness(businessID)
+	if role != enum.RoleOwner {
+		err := us.userRepo.DeleteEmployee(employeeID)
 		if err != nil {
-			slog.Error("failed to delete user", "employee_id", employeeID, "err", err)
+			slog.Error("failed to deactivate employee", "employee_id", employeeID, "err", err)
 			return err
 		}
-		slog.Info("user deleted successfully", "employee_id", employeeID)
+
+		slog.Info("employee deactivated successfully", "employee_id", employeeID)
 		return nil
 	}
 
-	err := us.userRepo.DeleteEmployee(employeeID)
+	slog.Warn("user is an owner, deleting user will result in business deletion", "role", role)
+	err := us.userRepo.DeleteOwnerAndBusiness(businessID)
 	if err != nil {
-		slog.Error("failed to deactivate employee", "employee_id", employeeID, "err", err)
+		slog.Error("failed to delete user", "employee_id", employeeID, "err", err)
 		return err
 	}
-
-	slog.Info("employee deactivated successfully", "employee_id", employeeID)
+	slog.Info("user deleted successfully", "employee_id", employeeID)
 	return nil
+
 }
 
 func (us *Service) GetUsers(businessID uuid.UUID) ([]resmodels.GetUsersResponseDTO, error) {

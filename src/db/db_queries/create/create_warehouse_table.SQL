@@ -8,5 +8,5 @@ CREATE TABLE warehouses(
 
     UNIQUE(business_id, name),
 
-    FOREIGN KEY(business_id) references business(id)
+    FOREIGN KEY(business_id) references business(id) ON DELETE CASCADE
 )

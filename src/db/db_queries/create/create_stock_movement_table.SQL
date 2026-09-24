@@ -15,5 +15,5 @@ CREATE TABLE stock_movement(
     FOREIGN KEY(user_id) references users(id),
     FOREIGN KEY(warehouse_id) references warehouses(id),
     FOREIGN KEY(product_id) references products(id),
-    FOREIGN KEY(business_id) references business(id)
+    FOREIGN KEY(business_id) references business(id) ON DELETE CASCADE
 )

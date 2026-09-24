@@ -6,5 +6,7 @@ CREATE TABLE categories(
     created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
     updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
 
-    FOREIGN KEY(business_id) references business(id)
+    UNIQUE (business_id, name),
+
+    FOREIGN KEY(business_id) references business(id) ON DELETE CASCADE
 )

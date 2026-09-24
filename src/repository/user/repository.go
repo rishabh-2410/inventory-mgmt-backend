@@ -198,23 +198,10 @@ func (ur *UserRepo) FindByBusinessIDAndRole(businessID uuid.UUID, role enum.User
 func (ur *UserRepo) DeleteOwnerAndBusiness(businessID uuid.UUID) error {
 	slog.Debug("deleting owner and business...", "business_id", businessID)
 
-	tx, err := ur.db.Begin()
-	if err != nil {
-		slog.Error("failed to begin transaction", "err", err)
-		return err
-	}
-	defer tx.Rollback()
-
 	deleteBusinessQuery := `DELETE FROM businesses WHERE id=$1`
-	_, err = tx.Exec(deleteBusinessQuery, businessID)
+	_, err := ur.db.Exec(deleteBusinessQuery, businessID)
 	if err != nil {
 		slog.Error("failed to delete business", "business_id", businessID, "err", err)
-		return err
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		slog.Error("failed to commit transaction", "err", err)
 		return err
 	}
 

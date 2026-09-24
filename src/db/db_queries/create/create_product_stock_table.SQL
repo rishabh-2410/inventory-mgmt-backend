@@ -8,6 +8,7 @@ CREATE TABLE product_stock(
     updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
     UNIQUE (warehouse_id, product_id),
 
-    FOREIGN KEY(product_id) references products(id),
-    FOREIGN KEY(warehouse_id) references warehouses(id)
+    FOREIGN KEY(product_id) references products(id) ON DELETE CASCADE,
+    FOREIGN KEY(warehouse_id) references warehouses(id) ON DELETE CASCADE,
+    FOREIGN KEY(business_id) references business(id) ON DELETE CASCADE
  )

@@ -8,7 +8,8 @@ CREATE TABLE products(
     image_url VARCHAR(255) NOT NULL,
     created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
     updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    sku TEXT NOT NULL,
 
     FOREIGN KEY ( category_id ) references categories(id),
-    FOREIGN KEY ( business_id) references business(id)
+    FOREIGN KEY ( business_id) references business(id) ON DELETE CASCADE
 )

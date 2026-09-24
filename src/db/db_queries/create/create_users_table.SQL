@@ -9,5 +9,5 @@ CREATE TABLE users(
     created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
     updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
 
-    FOREIGN KEY(business_id) references business(id)
+    FOREIGN KEY(business_id) references business(id) ON DELETE CASCADE
 )
