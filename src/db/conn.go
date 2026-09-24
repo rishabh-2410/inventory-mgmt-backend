@@ -10,7 +10,6 @@ import (
 )
 
 func Connect() (*sql.DB, error) {
-	// Get the connection mode from the environment variables
 	connectEnv := os.Getenv("DB_MODE")
 	slog.Info("database connection requested mode", "mode", connectEnv)
 
@@ -30,7 +29,6 @@ func Connect() (*sql.DB, error) {
 		return nil, fmt.Errorf("invalid connection mode: %s", connectEnv)
 	}
 
-	// Check if the connection string is empty
 	if connectionStr == "" {
 		slog.Error("database connection failed no connection string found")
 		return nil, fmt.Errorf("no connection string found")
@@ -54,7 +52,7 @@ func Connect() (*sql.DB, error) {
 }
 
 func connectToLocalDB() string {
-	// Load environment variables for the connection string
+	// Initialize string parameters
 	host := os.Getenv("DB_HOST")
 	port := os.Getenv("DB_PORT")
 	user := os.Getenv("DB_USER")
