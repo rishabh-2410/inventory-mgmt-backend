@@ -57,8 +57,12 @@ func (wr *WarehouseRepo) GetWarehouses(businessID uuid.UUID) ([]dbmodel.Warehous
 	result := make([]dbmodel.Warehouse, 0)
 
 	rows, err := wr.db.Query(
+<<<<<<< HEAD
 		`SELECT id, business_id, name, address, created_at, updated_at 
 		FROM warehouses
+=======
+		`SELECT id, business_id, name, address, created_at, updated_at  FROM warehouses
+>>>>>>> 27ac1e3 (fix get warehouse repo)
 		WHERE business_id=$1	
 		`, businessID)
 
