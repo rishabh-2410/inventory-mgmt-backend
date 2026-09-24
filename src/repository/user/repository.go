@@ -198,7 +198,7 @@ func (ur *UserRepo) FindByBusinessIDAndRole(businessID uuid.UUID, role enum.User
 func (ur *UserRepo) DeleteOwnerAndBusiness(businessID uuid.UUID) error {
 	slog.Debug("deleting owner and business...", "business_id", businessID)
 
-	deleteBusinessQuery := `DELETE FROM businesses WHERE id=$1`
+	deleteBusinessQuery := `DELETE FROM business WHERE id=$1`
 	_, err := ur.db.Exec(deleteBusinessQuery, businessID)
 	if err != nil {
 		slog.Error("failed to delete business", "business_id", businessID, "err", err)
